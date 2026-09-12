@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "27140672731",
+    "project_id": "gestion-alquileres-grupo-2",
+    "storage_bucket": "gestion-alquileres-grupo-2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:27140672731:android:6fb1d4e65dd4f719a6d0fe",
+        "android_client_info": {
+          "package_name": "com.example.gestionalquileres"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvwwJ6DsPFMG215VnmKE4EwqtIFn7cOpo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
