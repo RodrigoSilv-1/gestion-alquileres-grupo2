@@ -39,10 +39,13 @@ import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.ui.auth.AuthUiState
 import com.example.gestionalquileres.ui.auth.AuthViewModel
+import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
+import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
 
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
+    private val inquilinoViewModel: InquilinoViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,10 +58,13 @@ class MainActivity : ComponentActivity() {
                 when {
                     uiState.isLoading -> LoadingScreen()
 
-                    uiState.currentUser != null -> HomeScreen(
-                        user = uiState.currentUser!!,
-                        onLogout = authViewModel::logout
-                    )
+                    uiState.currentUser != null -> {
+                        HomeScreen(
+                            user = uiState.currentUser!!,
+                            onLogout = authViewModel::logout,
+                            inquilinoViewModel = inquilinoViewModel
+                        )
+                    }
 
                     showRegister -> RegisterScreen(
                         uiState = uiState,
@@ -271,42 +277,70 @@ fun RegisterScreen(
 @Composable
 fun HomeScreen(
     user: AppUser,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    inquilinoViewModel: InquilinoViewModel
 ) {
-    val roleText = if (user.role == UserRole.ADMIN.name) {
-        "Administrador"
-    } else {
-        "Secretario"
+    var mostrarInquilinos by rememberSaveable {
+        mutableStateOf(false)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Sesión iniciada",
-            style = MaterialTheme.typography.headlineMedium
+    if (mostrarInquilinos) {
+        InquilinoScreen(
+            viewModel = inquilinoViewModel,
+            onVolver = {
+                mostrarInquilinos = false
+            }
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(user.email)
-        Text("Rol: $roleText")
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        if (user.role == UserRole.ADMIN.name) {
-            Text("Aquí irán los módulos de inmuebles e inquilinos.")
+    } else {
+        val roleText = if (user.role == UserRole.ADMIN.name) {
+            "Administrador"
         } else {
-            Text("Aquí irán los módulos de recibos y cobros.")
+            "Secretario"
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Sesión iniciada",
+                style = MaterialTheme.typography.headlineMedium
+            )
 
-        Button(onClick = onLogout) {
-            Text("Cerrar sesión")
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(user.email)
+
+            Text("Rol: $roleText")
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (user.role == UserRole.ADMIN.name) {
+                Text("Módulos del Administrador")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        mostrarInquilinos = true
+                    }
+                ) {
+                    Text("Gestión de Inquilinos")
+                }
+            } else {
+                Text("Aquí irán los módulos de recibos y cobros.")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onLogout
+            ) {
+                Text("Cerrar sesión")
+            }
         }
     }
 }
