@@ -39,6 +39,8 @@ import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.ui.auth.AuthUiState
 import com.example.gestionalquileres.ui.auth.AuthViewModel
+import com.example.gestionalquileres.ui.inmuebles.InmuebleScreen
+import com.example.gestionalquileres.ui.inmuebles.InmuebleViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
 
@@ -46,6 +48,7 @@ class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
     private val inquilinoViewModel: InquilinoViewModel by viewModels()
+    private val inmuebleViewModel: InmuebleViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +65,8 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             user = uiState.currentUser!!,
                             onLogout = authViewModel::logout,
-                            inquilinoViewModel = inquilinoViewModel
+                            inquilinoViewModel = inquilinoViewModel,
+                            inmuebleViewModel = inmuebleViewModel
                         )
                     }
 
@@ -278,13 +282,25 @@ fun RegisterScreen(
 fun HomeScreen(
     user: AppUser,
     onLogout: () -> Unit,
-    inquilinoViewModel: InquilinoViewModel
+    inquilinoViewModel: InquilinoViewModel,
+    inmuebleViewModel: InmuebleViewModel
 ) {
     var mostrarInquilinos by rememberSaveable {
         mutableStateOf(false)
     }
 
-    if (mostrarInquilinos) {
+    var mostrarInmuebles by rememberSaveable() {
+        mutableStateOf(false)
+    }
+
+    if(mostrarInmuebles) {
+        InmuebleScreen(
+            viewModel = inmuebleViewModel,
+            onVolver = {
+                mostrarInmuebles = false
+            }
+        )
+    } else if (mostrarInquilinos) {
         InquilinoScreen(
             viewModel = inquilinoViewModel,
             onVolver = {
@@ -329,6 +345,14 @@ fun HomeScreen(
                     }
                 ) {
                     Text("Gestión de Inquilinos")
+                }
+
+                Button(
+                    onClick = {
+                        mostrarInmuebles = true
+                    }
+                ) {
+                    Text("Gestión de Inmuebles")
                 }
             } else {
                 Text("Aquí irán los módulos de recibos y cobros.")
