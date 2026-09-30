@@ -59,13 +59,11 @@ import coil.compose.AsyncImage
 import com.example.gestionalquileres.domain.model.Inquilino
 import java.io.ByteArrayOutputStream
 
-// Comprime la imagen y la pasa a Base64 para guardarla directo en Firestore
 fun uriABase64(context: Context, uri: Uri): String? {
     return try {
         val inputStream = context.contentResolver.openInputStream(uri)
         val bitmapOriginal = BitmapFactory.decodeStream(inputStream) ?: return null
 
-        // Redimensionar para no exceder el limite por documento
         val maxDimension = 400f
         val escala = maxDimension / Math.max(bitmapOriginal.width, bitmapOriginal.height).toFloat()
         val anchoFinal = if (escala < 1.0f) (bitmapOriginal.width * escala).toInt() else bitmapOriginal.width
@@ -79,8 +77,7 @@ fun uriABase64(context: Context, uri: Uri): String? {
         Base64.encodeToString(bytes, Base64.NO_WRAP)
     } catch (e: Exception) {
         e.printStackTrace()
-        null
-    }
+        null    }
 }
 
 // Pantalla para registrar un nuevo inquilino
@@ -158,7 +155,6 @@ fun RegistrarInquilinoScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Menu desplegable para el sexo
         var sexoExpandido by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -207,7 +203,6 @@ fun RegistrarInquilinoScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Previsualizacion y selector de imagen
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
