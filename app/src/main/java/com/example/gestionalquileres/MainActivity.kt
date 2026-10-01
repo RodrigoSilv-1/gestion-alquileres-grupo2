@@ -42,6 +42,14 @@ import com.example.gestionalquileres.ui.auth.AuthViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
 
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
@@ -58,13 +66,10 @@ class MainActivity : ComponentActivity() {
                 when {
                     uiState.isLoading -> LoadingScreen()
 
-                    uiState.currentUser != null -> {
-                        HomeScreen(
-                            user = uiState.currentUser!!,
-                            onLogout = authViewModel::logout,
-                            inquilinoViewModel = inquilinoViewModel
-                        )
-                    }
+                    uiState.currentUser != null -> HomeScreen(
+                        user = uiState.currentUser!!,
+                        onLogout = authViewModel::logout,
+                        inquilinoViewModel = inquilinoViewModel)
 
                     showRegister -> RegisterScreen(
                         uiState = uiState,
@@ -105,78 +110,128 @@ fun LoginScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFEAF4FF),
-                        Color.White
-                    )
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+        // FOTO DE FONDO
+        Image(
+            painter = painterResource(id = R.drawable.edificios),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // DEGRADADO
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Color.Black.copy(alpha = 0.35f)
+                )
+        )
+
+        // CONTENIDO
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Spacer(modifier = Modifier.height(50.dp))
+
+
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Gestión de Alquileres",
+                color = Color.White,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Iniciar sesión",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Correo electrónico") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF555555),
+                    focusedBorderColor = Color(0xFF1565C0),
+                    unfocusedLabelColor = Color(0xFF555555),
+                    focusedLabelColor = Color(0xFF1565C0)
                 )
             )
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_apartment_logo),
-            contentDescription = "Logo de Gestión de Alquileres",
-            modifier = Modifier
-                .size(96.dp)
-                .align(Alignment.CenterHorizontally)
-        )
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Gestión de Alquileres",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Iniciar sesión")
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Correo electrónico") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (uiState.errorMessage != null) {
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = uiState.errorMessage,
-                color = MaterialTheme.colorScheme.error
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+
+                    unfocusedBorderColor = Color(0xFF555555),
+                    focusedBorderColor = Color(0xFF1565C0),
+
+                    unfocusedLabelColor = Color(0xFF555555),
+                    focusedLabelColor = Color(0xFF1565C0)
+                )
             )
-        }
 
-        Spacer(modifier = Modifier.height(20.dp))
+            if (uiState.errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-        Button(
-            onClick = { onLogin(email, password) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Iniciar sesión")
-        }
+                Text(
+                    text = uiState.errorMessage,
+                    color = Color.White
+                )
+            }
 
-        TextButton(
-            onClick = onGoToRegister,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("¿No tienes cuenta? Regístrate")
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = { onLogin(email, password) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1565C0),
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Iniciar sesión")
+            }
+
+            TextButton(
+                onClick = onGoToRegister
+            ) {
+                Text(
+                    text = "¿No tienes cuenta? Regístrate",
+                    color = Color.White
+                )
+            }
         }
     }
 }
@@ -191,85 +246,145 @@ fun RegisterScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFEAF4FF),
-                        Color.White
-                    )
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+        // IMAGEN DE FONDO
+        Image(
+            painter = painterResource(id = R.drawable.edificios),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // CAPA OSCURA
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Color.Black.copy(alpha = 0.35f)
+                )
+        )
+
+        // CONTENIDO
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Spacer(modifier = Modifier.height(50.dp))
+
+            Text(
+                text = "Crear cuenta",
+                color = Color.White,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // CORREO
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = {
+                    Text("Correo electrónico")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF555555),
+                    focusedBorderColor = Color(0xFF1565C0),
+                    unfocusedLabelColor = Color(0xFF555555),
+                    focusedLabelColor = Color(0xFF1565C0)
                 )
             )
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_apartment_logo),
-            contentDescription = "Logo de Gestión de Alquileres",
-            modifier = Modifier
-                .size(96.dp)
-                .align(Alignment.CenterHorizontally)
-        )
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Crear cuenta",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Correo electrónico") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña mínimo 6 caracteres") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("Confirmar contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (uiState.errorMessage != null) {
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = uiState.errorMessage,
-                color = MaterialTheme.colorScheme.error
+
+            // CONTRASEÑA
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = {
+                    Text("Contraseña mínimo 6 caracteres")
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF555555),
+                    focusedBorderColor = Color(0xFF1565C0),
+                    unfocusedLabelColor = Color(0xFF555555),
+                    focusedLabelColor = Color(0xFF1565C0)
+                )
             )
-        }
 
-        Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Button(
-            onClick = { onRegister(email, password, confirmPassword) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Registrarme")
-        }
+            // CONFIRMAR CONTRASEÑA
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = {
+                    Text("Confirmar contraseña")
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF555555),
+                    focusedBorderColor = Color(0xFF1565C0),
+                    unfocusedLabelColor = Color(0xFF555555),
+                    focusedLabelColor = Color(0xFF1565C0)
+                )
+            )
 
-        TextButton(
-            onClick = onGoToLogin,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("Ya tengo una cuenta")
+            if (uiState.errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = uiState.errorMessage,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // BOTÓN REGISTRAR
+            Button(
+                onClick = {
+                    onRegister(email, password, confirmPassword)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1565C0),
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Registrarme")
+            }
+
+            // VOLVER AL LOGIN
+            TextButton(
+                onClick = onGoToLogin
+            ) {
+                Text(
+                    text = "Ya tengo una cuenta",
+                    color = Color.White
+                )
+            }
         }
     }
 }
