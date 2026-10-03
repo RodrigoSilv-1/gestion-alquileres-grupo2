@@ -31,29 +31,30 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.ui.auth.AuthUiState
 import com.example.gestionalquileres.ui.auth.AuthViewModel
+import com.example.gestionalquileres.ui.inmuebles.InmuebleScreen
+import com.example.gestionalquileres.ui.inmuebles.InmuebleViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
-
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
     private val inquilinoViewModel: InquilinoViewModel by viewModels()
+    private val inmuebleViewModel: InmuebleViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,10 +67,14 @@ class MainActivity : ComponentActivity() {
                 when {
                     uiState.isLoading -> LoadingScreen()
 
-                    uiState.currentUser != null -> HomeScreen(
-                        user = uiState.currentUser!!,
-                        onLogout = authViewModel::logout,
-                        inquilinoViewModel = inquilinoViewModel)
+                    uiState.currentUser != null -> {
+                        HomeScreen(
+                            user = uiState.currentUser!!,
+                            onLogout = authViewModel::logout,
+                            inquilinoViewModel = inquilinoViewModel,
+                            inmuebleViewModel = inmuebleViewModel
+                        )
+                    }
 
                     showRegister -> RegisterScreen(
                         uiState = uiState,
@@ -181,7 +186,7 @@ fun LoginScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = password,
@@ -211,7 +216,7 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
             Button(
                 onClick = { onLogin(email, password) },
@@ -286,7 +291,7 @@ fun RegisterScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
             // CORREO
             OutlinedTextField(
@@ -307,7 +312,7 @@ fun RegisterScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
             // CONTRASEÑA
             OutlinedTextField(
@@ -329,7 +334,7 @@ fun RegisterScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
             // CONFIRMAR CONTRASEÑA
             OutlinedTextField(
@@ -360,7 +365,7 @@ fun RegisterScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
             // BOTÓN REGISTRAR
             Button(
@@ -393,13 +398,25 @@ fun RegisterScreen(
 fun HomeScreen(
     user: AppUser,
     onLogout: () -> Unit,
-    inquilinoViewModel: InquilinoViewModel
+    inquilinoViewModel: InquilinoViewModel,
+    inmuebleViewModel: InmuebleViewModel
 ) {
     var mostrarInquilinos by rememberSaveable {
         mutableStateOf(false)
     }
 
-    if (mostrarInquilinos) {
+    var mostrarInmuebles by rememberSaveable() {
+        mutableStateOf(false)
+    }
+
+    if(mostrarInmuebles) {
+        InmuebleScreen(
+            viewModel = inmuebleViewModel,
+            onVolver = {
+                mostrarInmuebles = false
+            }
+        )
+    } else if (mostrarInquilinos) {
         InquilinoScreen(
             viewModel = inquilinoViewModel,
             onVolver = {
@@ -444,6 +461,14 @@ fun HomeScreen(
                     }
                 ) {
                     Text("Gestión de Inquilinos")
+                }
+
+                Button(
+                    onClick = {
+                        mostrarInmuebles = true
+                    }
+                ) {
+                    Text("Gestión de Inmuebles")
                 }
             } else {
                 Text("Aquí irán los módulos de recibos y cobros.")
