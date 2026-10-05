@@ -5,15 +5,19 @@ import com.example.gestionalquileres.domain.model.UserRole
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class FirebaseAuthRepository(
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+@Singleton
+class FirebaseAuthRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
 ) : AuthRepository {
 
     override suspend fun register(
         email: String,
-        password: String
+        password: String,
+        role: UserRole
     ): Result<AppUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
@@ -24,7 +28,7 @@ class FirebaseAuthRepository(
             val appUser = AppUser(
                 uid = firebaseUser.uid,
                 email = firebaseUser.email ?: email,
-                role = UserRole.SECRETARIO.name,
+                role = role.name,
                 active = true
             )
 

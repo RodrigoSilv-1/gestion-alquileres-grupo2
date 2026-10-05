@@ -50,7 +50,13 @@ import com.example.gestionalquileres.ui.inmuebles.InmuebleScreen
 import com.example.gestionalquileres.ui.inmuebles.InmuebleViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
+import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.RadioButton
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
@@ -80,13 +86,15 @@ class MainActivity : ComponentActivity() {
                     showRegister -> RegisterScreen(
                         uiState = uiState,
                         onRegister = authViewModel::register,
-                        onGoToLogin = { showRegister = false }
+                        onGoToLogin = { showRegister = false },
+                        onClearError = authViewModel::clearError
                     )
 
                     else -> LoginScreen(
                         uiState = uiState,
                         onLogin = authViewModel::login,
-                        onGoToRegister = { showRegister = true }
+                        onGoToRegister = { showRegister = true },
+                        onClearError = authViewModel::clearError
                     )
                 }
             }
@@ -111,10 +119,18 @@ fun LoadingScreen() {
 fun LoginScreen(
     uiState: AuthUiState,
     onLogin: (String, String) -> Unit,
-    onGoToRegister: () -> Unit
+    onGoToRegister: () -> Unit,
+    onClearError: () -> Unit
+
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null) {
+            delay(3000)
+            onClearError()
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -245,12 +261,22 @@ fun LoginScreen(
 @Composable
 fun RegisterScreen(
     uiState: AuthUiState,
-    onRegister: (String, String, String) -> Unit,
-    onGoToLogin: () -> Unit
+    onRegister: (String, String, String, UserRole) -> Unit,
+    onGoToLogin: () -> Unit,
+    onClearError: () -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var selectedRole by rememberSaveable {
+        mutableStateOf(UserRole.SECRETARIO.name)
+    }
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null) {
+            delay(3000)
+            onClearError()
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -356,7 +382,29 @@ fun RegisterScreen(
                     focusedLabelColor = Color(0xFF1565C0)
                 )
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
+            Text("Selecciona un rol")
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = selectedRole == UserRole.SECRETARIO.name,
+                    onClick = { selectedRole = UserRole.SECRETARIO.name }
+                )
+                Text("Secretario")
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = selectedRole == UserRole.ADMIN.name,
+                    onClick = { selectedRole = UserRole.ADMIN.name }
+                )
+                Text("Administrador")
+            }
             if (uiState.errorMessage != null) {
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -371,7 +419,12 @@ fun RegisterScreen(
             // BOTÓN REGISTRAR
             Button(
                 onClick = {
-                    onRegister(email, password, confirmPassword)
+                    onRegister(
+                        email,
+                        password,
+                        confirmPassword,
+                        UserRole.valueOf(selectedRole)
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
