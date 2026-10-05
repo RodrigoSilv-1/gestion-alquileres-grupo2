@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.example.gestionalquileres.domain.model.UserRole
 
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repository: AuthRepository
@@ -72,7 +73,25 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+    fun signInWithGoogle(
+        idToken: String,
+        role: UserRole
+    ) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState(isLoading = true)
 
+            repository.signInWithGoogle(idToken, role)
+                .onSuccess { user ->
+                    _uiState.value = AuthUiState(currentUser = user)
+                }
+                .onFailure { error ->
+                    _uiState.value = AuthUiState(
+                        errorMessage = error.message
+                            ?: "No se pudo iniciar sesión con Google."
+                    )
+                }
+        }
+    }
     fun logout() {
         repository.logout()
         _uiState.value = AuthUiState()
@@ -96,7 +115,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private fun showError(message: String) {
+    fun showError(message: String) {
         _uiState.value = AuthUiState(errorMessage = message)
     }
     fun clearError() {

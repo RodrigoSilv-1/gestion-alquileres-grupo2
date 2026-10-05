@@ -55,6 +55,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.delay
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -87,14 +97,19 @@ class MainActivity : ComponentActivity() {
                         uiState = uiState,
                         onRegister = authViewModel::register,
                         onGoToLogin = { showRegister = false },
-                        onClearError = authViewModel::clearError
+                        onClearError = authViewModel::clearError,
+                        onGoogleSignIn = authViewModel::signInWithGoogle,
+                        onGoogleError = authViewModel::showError
+
                     )
 
                     else -> LoginScreen(
                         uiState = uiState,
                         onLogin = authViewModel::login,
                         onGoToRegister = { showRegister = true },
-                        onClearError = authViewModel::clearError
+                        onClearError = authViewModel::clearError,
+                        onGoogleSignIn = authViewModel::signInWithGoogle,
+                        onGoogleError = authViewModel::showError
                     )
                 }
             }
@@ -120,7 +135,9 @@ fun LoginScreen(
     uiState: AuthUiState,
     onLogin: (String, String) -> Unit,
     onGoToRegister: () -> Unit,
-    onClearError: () -> Unit
+    onClearError: () -> Unit,
+    onGoogleSignIn: (String, UserRole) -> Unit,
+    onGoogleError: (String) -> Unit
 
 ) {
     var email by rememberSaveable { mutableStateOf("") }
@@ -245,7 +262,13 @@ fun LoginScreen(
             ) {
                 Text("Iniciar sesión")
             }
+            Spacer(modifier = Modifier.height(12.dp))
 
+            GoogleSignInButton(
+                role = UserRole.ADMIN,
+                onGoogleToken = onGoogleSignIn,
+                onGoogleError = onGoogleError
+            )
             TextButton(
                 onClick = onGoToRegister
             ) {
@@ -263,7 +286,9 @@ fun RegisterScreen(
     uiState: AuthUiState,
     onRegister: (String, String, String, UserRole) -> Unit,
     onGoToLogin: () -> Unit,
-    onClearError: () -> Unit
+    onClearError: () -> Unit,
+    onGoogleSignIn: (String, UserRole) -> Unit,
+    onGoogleError: (String) -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -435,6 +460,14 @@ fun RegisterScreen(
                 Text("Registrarme")
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            GoogleSignInButton(
+                role = UserRole.valueOf(selectedRole),
+                onGoogleToken = onGoogleSignIn,
+                onGoogleError = onGoogleError
+            )
+
             // VOLVER AL LOGIN
             TextButton(
                 onClick = onGoToLogin
@@ -536,5 +569,71 @@ fun HomeScreen(
                 Text("Cerrar sesión")
             }
         }
+    }
+}
+@Composable
+fun GoogleSignInButton(
+    role: UserRole,
+    onGoogleToken: (String, UserRole) -> Unit,
+    onGoogleError: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val webClientId = stringResource(R.string.google_web_client_id)
+    Button(
+        onClick = {
+            coroutineScope.launch {
+                try {
+                    val credentialManager = CredentialManager.create(context)
+
+                    val googleIdOption = GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId(webClientId)
+                        .setAutoSelectEnabled(false)
+                        .build()
+
+                    val request = GetCredentialRequest.Builder()
+                        .addCredentialOption(googleIdOption)
+                        .build()
+
+                    val result = credentialManager.getCredential(
+                        context,
+                        request
+                    )
+
+                    val credential = result.credential
+
+                    if (
+                        credential is CustomCredential &&
+                        credential.type ==
+                        GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                    ) {
+                        val googleCredential =
+                            GoogleIdTokenCredential.createFrom(credential.data)
+
+                        onGoogleToken(
+                            googleCredential.idToken,
+                            role
+                        )
+                    } else {
+                        onGoogleError(
+                            "No se pudo obtener una cuenta de Google."
+                        )
+                    }
+                } catch (error: Exception) {
+                    onGoogleError(
+                        "No se pudo iniciar sesión con Google."
+                    )
+                }
+            }
+
+        },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF1565C0),
+            contentColor = Color.White
+        )
+    ) {
+        Text("Continuar con Google")
     }
 }
