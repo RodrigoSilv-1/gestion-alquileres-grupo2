@@ -12,7 +12,20 @@
           "package_name": "com.example.gestionalquileres"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "27140672731-e9o46rtv7atatbpbjhl6dk7bik4o7jue.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gestionalquileres",
+            "certificate_hash": "26daeee7d4858b1d4fec87df193e5aca6c7c53a2"
+          }
+        },
+        {
+          "client_id": "27140672731-tgejir7opvdohcl4dpt6mvi0c3ecsmsd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDvwwJ6DsPFMG215VnmKE4EwqtIFn7cOpo"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "27140672731-d104hk4tq3oi7818fld69pnp9l3s82pi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
