@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -30,9 +31,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -40,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,9 +59,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.gestionalquileres.domain.model.Inquilino
 import java.io.ByteArrayOutputStream
@@ -77,7 +87,8 @@ fun uriABase64(context: Context, uri: Uri): String? {
         Base64.encodeToString(bytes, Base64.NO_WRAP)
     } catch (e: Exception) {
         e.printStackTrace()
-        null    }
+        null
+    }
 }
 
 // Pantalla para registrar un nuevo inquilino
@@ -94,7 +105,6 @@ fun RegistrarInquilinoScreen(
     var fotografiaBase64 by remember { mutableStateOf<String?>(null) }
     var telefono by remember { mutableStateOf("") }
 
-    // Selector de fotos nativo de Android
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -120,6 +130,7 @@ fun RegistrarInquilinoScreen(
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Nombre") }
         )
@@ -129,6 +140,7 @@ fun RegistrarInquilinoScreen(
         OutlinedTextField(
             value = dni,
             onValueChange = { dni = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("DNI") }
         )
@@ -138,6 +150,7 @@ fun RegistrarInquilinoScreen(
         OutlinedTextField(
             value = telefono,
             onValueChange = { telefono = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Teléfono") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -149,6 +162,7 @@ fun RegistrarInquilinoScreen(
         OutlinedTextField(
             value = edad,
             onValueChange = { edad = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Edad") }
         )
@@ -162,11 +176,11 @@ fun RegistrarInquilinoScreen(
                 value = sexo,
                 onValueChange = {},
                 readOnly = true,
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Sexo") },
                 trailingIcon = { Text(if (sexoExpandido) "▲" else "▼") }
             )
-            // Captura el clic sobre todo el campo para abrir el menu
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -253,7 +267,6 @@ fun RegistrarInquilinoScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botones de accion
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -325,6 +338,7 @@ fun EditarInquilinoScreen(
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Nombre") }
         )
@@ -334,6 +348,7 @@ fun EditarInquilinoScreen(
         OutlinedTextField(
             value = dni,
             onValueChange = { dni = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("DNI") }
         )
@@ -343,6 +358,7 @@ fun EditarInquilinoScreen(
         OutlinedTextField(
             value = telefono,
             onValueChange = { telefono = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Teléfono") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -354,13 +370,13 @@ fun EditarInquilinoScreen(
         OutlinedTextField(
             value = edad,
             onValueChange = { edad = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Edad") }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Selector desplegable para actualizar sexo
         var sexoExpandido by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -368,6 +384,7 @@ fun EditarInquilinoScreen(
                 value = sexo,
                 onValueChange = {},
                 readOnly = true,
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Sexo") },
                 trailingIcon = { Text(if (sexoExpandido) "▲" else "▼") }
@@ -489,7 +506,7 @@ fun EditarInquilinoScreen(
     }
 }
 
-// Pantalla principal: listado, busquedas y control de navegacion
+// Pantalla principal: listado, busquedas y control de navegacion con estado DESACOPLADO
 @Composable
 fun InquilinoScreen(
     viewModel: InquilinoViewModel,
@@ -498,28 +515,21 @@ fun InquilinoScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Carga la lista inicial desde la base de datos
     LaunchedEffect(Unit) {
         viewModel.obtenerTodos()
     }
 
-    var inquilinoAEditar by remember { mutableStateOf<Inquilino?>(null) }
-    var mostrandoFormularioRegistro by remember { mutableStateOf(false) }
-    var tipoBusqueda by remember { mutableStateOf("Nombre") }
-    var textoBusqueda by remember { mutableStateOf("") }
-
     when {
-        mostrandoFormularioRegistro -> {
+        uiState.mostrandoFormularioRegistro -> {
             RegistrarInquilinoScreen(
                 onGuardar = { nuevoInquilino ->
                     viewModel.registrar(nuevoInquilino)
                 },
                 onCancelar = {
-                    mostrandoFormularioRegistro = false
+                    viewModel.mostrarFormularioRegistro(false)
                 }
             )
 
-            // Alerta si el DNI ingresado ya existia pero estaba dado de baja
             uiState.inquilinoInactivoDetectado?.let { inactivo ->
                 AlertDialog(
                     onDismissRequest = { viewModel.cancelarReactivacion() },
@@ -532,10 +542,7 @@ fun InquilinoScreen(
                     },
                     confirmButton = {
                         TextButton(
-                            onClick = {
-                                viewModel.reactivarInquilino(inactivo)
-                                mostrandoFormularioRegistro = false
-                            }
+                            onClick = { viewModel.reactivarInquilino(inactivo) }
                         ) {
                             Text("Reactivar")
                         }
@@ -550,36 +557,56 @@ fun InquilinoScreen(
                 )
             }
 
-            // Cierra el formulario cuando la operacion se guarda correctamente
             LaunchedEffect(uiState.successMessage) {
                 if (uiState.successMessage != null) {
-                    mostrandoFormularioRegistro = false
                     viewModel.limpiarMensajes()
                 }
             }
         }
 
-        inquilinoAEditar != null -> {
+        uiState.inquilinoSeleccionado != null -> {
             EditarInquilinoScreen(
-                inquilino = inquilinoAEditar!!,
+                inquilino = uiState.inquilinoSeleccionado!!,
                 onGuardar = { actualizado ->
                     viewModel.actualizar(actualizado)
-                    inquilinoAEditar = null
                 },
                 onCancelar = {
-                    inquilinoAEditar = null
+                    viewModel.seleccionarInquilinoParaEditar(null)
                 }
             )
         }
 
         else -> {
+            // Manejo del AlertDialog de Dar de Baja leyendo desde el estado
+            if (uiState.inquilinoDarDeBaja != null) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.seleccionarInquilinoParaBaja(null) },
+                    title = { Text("Dar de baja") },
+                    text = { Text("¿Deseas dar de baja a ${uiState.inquilinoDarDeBaja!!.nombre}?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.darDeBaja(uiState.inquilinoDarDeBaja!!.idInquilino)
+                            }
+                        ) {
+                            Text("Sí", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.seleccionarInquilinoParaBaja(null) }) {
+                            Text("No")
+                        }
+                    }
+                )
+            }
+
             Column(
                 modifier = modifier
                     .fillMaxSize()
                     .statusBarsPadding()
                     .padding(16.dp)
             ) {
-                // Barra superior: volver y boton para nuevo registro
+                // Barra superior
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -598,7 +625,7 @@ fun InquilinoScreen(
                             )
                         }
                         Text(
-                            text = "Lista de Inquilinos",
+                            text = "Inquilinos",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
@@ -606,7 +633,7 @@ fun InquilinoScreen(
                     Button(
                         onClick = {
                             viewModel.limpiarMensajes()
-                            mostrandoFormularioRegistro = true
+                            viewModel.mostrarFormularioRegistro(true)
                         }
                     ) {
                         Text("Nuevo")
@@ -615,30 +642,49 @@ fun InquilinoScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Filtro para elegir criterio de busqueda
+                // Filtro leyendo desde el ViewModel
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(onClick = { tipoBusqueda = "Nombre" }) {
-                        Text("Nombre")
+                    Button(
+                        onClick = { viewModel.actualizarTipoBusqueda("Nombre") },
+                        colors = if (uiState.tipoBusqueda == "Nombre") ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Text("Nombre", color = if (uiState.tipoBusqueda == "Nombre") Color.White else MaterialTheme.colorScheme.primary)
                     }
-                    Button(onClick = { tipoBusqueda = "DNI" }) {
-                        Text("DNI")
+                    Button(
+                        onClick = { viewModel.actualizarTipoBusqueda("DNI") },
+                        colors = if (uiState.tipoBusqueda == "DNI") ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Text("DNI", color = if (uiState.tipoBusqueda == "DNI") Color.White else MaterialTheme.colorScheme.primary)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Barra de Búsqueda leyendo desde el ViewModel
                 OutlinedTextField(
-                    value = textoBusqueda,
-                    onValueChange = { textoBusqueda = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Buscar por $tipoBusqueda") },
+                    value = uiState.textoBusqueda,
+                    onValueChange = { viewModel.actualizarTextoBusqueda(it) },
+                    placeholder = { Text("Buscar por ${uiState.tipoBusqueda}...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Buscar",
+                            tint = Color.Gray
+                        )
+                    },
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.LightGray
+                    ),
                     singleLine = true
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -646,11 +692,11 @@ fun InquilinoScreen(
                 ) {
                     Button(
                         onClick = {
-                            if (textoBusqueda.isNotBlank()) {
-                                if (tipoBusqueda == "Nombre") {
-                                    viewModel.obtenerPorNombre(textoBusqueda)
+                            if (uiState.textoBusqueda.isNotBlank()) {
+                                if (uiState.tipoBusqueda == "Nombre") {
+                                    viewModel.obtenerPorNombre(uiState.textoBusqueda)
                                 } else {
-                                    viewModel.obtenerPorDni(textoBusqueda)
+                                    viewModel.obtenerPorDni(uiState.textoBusqueda)
                                 }
                             }
                         }
@@ -660,7 +706,7 @@ fun InquilinoScreen(
 
                     Button(
                         onClick = {
-                            textoBusqueda = ""
+                            viewModel.actualizarTextoBusqueda("")
                             viewModel.obtenerTodos()
                         }
                     ) {
@@ -670,7 +716,6 @@ fun InquilinoScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Listado de inquilinos activos
                 if (uiState.isLoading) {
                     Text("Cargando lista de inquilinos...")
                 } else if (uiState.inquilinos.isEmpty()) {
@@ -680,103 +725,85 @@ fun InquilinoScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(uiState.inquilinos) { inquilino ->
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    // Muestra foto si tiene, o circulo con la inicial si no
-                                    if (!inquilino.fotografia.isNullOrBlank()) {
-                                        val bytes = remember(inquilino.fotografia) {
-                                            Base64.decode(inquilino.fotografia, Base64.DEFAULT)
-                                        }
-                                        AsyncImage(
-                                            model = bytes,
-                                            contentDescription = "Foto de ${inquilino.nombre}",
-                                            modifier = Modifier
-                                                .size(56.dp)
-                                                .clip(CircleShape),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(56.dp)
-                                                .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.primaryContainer),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = inquilino.nombre.firstOrNull()?.uppercase() ?: "?",
-                                                style = MaterialTheme.typography.titleLarge,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                        }
-                                    }
-
-                                    // Datos principales y botones de gestion
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = inquilino.nombre,
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        Text(
-                                            text = "DNI: ${inquilino.dni} • Edad: ${inquilino.edad}",
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            text = if (inquilino.telefono.isNotBlank()) "Tel: ${inquilino.telefono}" else "Tel: Sin registrar",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Button(onClick = { inquilinoAEditar = inquilino }) {
-                                                Text("Modificar")
-                                            }
-
-                                            var inquilinoDarDeBaja by remember {
-                                                mutableStateOf<Inquilino?>(null)
-                                            }
-
-                                            OutlinedButton(onClick = { inquilinoDarDeBaja = inquilino }) {
-                                                Text("Dar de baja")
-                                            }
-
-                                            // Confirmacion antes de aplicar la baja logica
-                                            if (inquilinoDarDeBaja != null) {
-                                                AlertDialog(
-                                                    onDismissRequest = { inquilinoDarDeBaja = null },
-                                                    title = { Text("Dar de baja") },
-                                                    text = { Text("¿Deseas dar de baja a ${inquilinoDarDeBaja!!.nombre}?") },
-                                                    confirmButton = {
-                                                        TextButton(
-                                                            onClick = {
-                                                                viewModel.darDeBaja(inquilinoDarDeBaja!!.idInquilino)
-                                                                inquilinoDarDeBaja = null
-                                                            }
-                                                        ) {
-                                                            Text("Sí")
-                                                        }
-                                                    },
-                                                    dismissButton = {
-                                                        TextButton(onClick = { inquilinoDarDeBaja = null }) {
-                                                            Text("No")
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            InquilinoCard(
+                                inquilino = inquilino,
+                                onModificar = { viewModel.seleccionarInquilinoParaEditar(it) },
+                                onDarDeBaja = { viewModel.seleccionarInquilinoParaBaja(it) }
+                            )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+// NUEVO DISEÑO PARA LA TARJETA DEL INQUILINO
+@Composable
+fun InquilinoCard(
+    inquilino: Inquilino,
+    onModificar: (Inquilino) -> Unit,
+    onDarDeBaja: (Inquilino) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar
+            if (!inquilino.fotografia.isNullOrBlank()) {
+                val bytes = remember(inquilino.fotografia) { Base64.decode(inquilino.fotografia, Base64.DEFAULT) }
+                AsyncImage(
+                    model = bytes, contentDescription = null,
+                    modifier = Modifier.size(50.dp).clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier.size(50.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = inquilino.nombre.firstOrNull()?.uppercase() ?: "?",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleMedium // Aplicando estilo del Theme
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Información del inquilino (AHORA USA TYPE.KT)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = inquilino.nombre,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium // Toma el tamaño de 18.sp semi-bold de Type.kt
+                )
+                Text(
+                    text = "DNI: ${inquilino.dni} • Edad: ${inquilino.edad}",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodyMedium // Toma el tamaño de 14.sp normal
+                )
+                Text(
+                    text = if (inquilino.telefono.isNotBlank()) "Tel: ${inquilino.telefono}" else "Tel: Sin registrar",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall // Toma el tamaño de 12.sp
+                )
+            }
+
+            // Botones
+            Row {
+                IconButton(onClick = { onModificar(inquilino) }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Modificar", tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = { onDarDeBaja(inquilino) }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Dar de baja", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

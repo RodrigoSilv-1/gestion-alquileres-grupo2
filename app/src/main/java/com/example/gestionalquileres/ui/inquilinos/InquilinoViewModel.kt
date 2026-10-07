@@ -4,20 +4,48 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionalquileres.data.repository.InquilinoRepository
 import com.example.gestionalquileres.domain.model.Inquilino
+import dagger.hilt.android.lifecycle.HiltViewModel
+import com.example.gestionalquileres.domain.model.onSuccess
+import com.example.gestionalquileres.domain.model.onFailure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class InquilinoViewModel : ViewModel() {
+@HiltViewModel // CAMBIO 2: Le decimos a Hilt que administre este ViewModel
+class InquilinoViewModel @Inject constructor(
+    private val repository: InquilinoRepository // CAMBIO 3: Hilt inyecta el repositorio automáticamente
+) : ViewModel() {
 
-    private val repository = InquilinoRepository()
 
-    // Estado principal expuesto a la interfaz
     private val _uiState = MutableStateFlow(InquilinoUiState())
     val uiState: StateFlow<InquilinoUiState> = _uiState.asStateFlow()
 
-    // Registra validando primero si el DNI ya existia en el sistema
+    // --- NUEVAS FUNCIONES DE ESTADO DESACOPLADO ---
+
+    fun actualizarTextoBusqueda(texto: String) {
+        _uiState.value = _uiState.value.copy(textoBusqueda = texto)
+    }
+
+    fun actualizarTipoBusqueda(tipo: String) {
+        _uiState.value = _uiState.value.copy(tipoBusqueda = tipo)
+    }
+
+    fun mostrarFormularioRegistro(mostrar: Boolean) {
+        _uiState.value = _uiState.value.copy(mostrandoFormularioRegistro = mostrar)
+    }
+
+    fun seleccionarInquilinoParaEditar(inquilino: Inquilino?) {
+        _uiState.value = _uiState.value.copy(inquilinoSeleccionado = inquilino)
+    }
+
+    fun seleccionarInquilinoParaBaja(inquilino: Inquilino?) {
+        _uiState.value = _uiState.value.copy(inquilinoDarDeBaja = inquilino)
+    }
+
+    // --- FUNCIONES DE BASE DE DATOS INTACTAS ---
+
     fun registrar(inquilino: Inquilino) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -26,14 +54,12 @@ class InquilinoViewModel : ViewModel() {
                 successMessage = null
             )
 
-            // Revisa si el DNI ya esta en la base de datos
             repository.buscarPorDniCualquiera(inquilino.dni)
                 .onSuccess { inquilinoExistente ->
                     if (inquilinoExistente != null) {
                         _uiState.value = _uiState.value.copy(isLoading = false)
 
                         if (!inquilinoExistente.active) {
-                            // Si estaba de baja, prepara el objeto para ofrecer reactivacion
                             val inquilinoParaReactivar = inquilino.copy(
                                 idInquilino = inquilinoExistente.idInquilino
                             )
@@ -41,13 +67,11 @@ class InquilinoViewModel : ViewModel() {
                                 inquilinoInactivoDetectado = inquilinoParaReactivar
                             )
                         } else {
-                            // Si ya existe activo, avisa para evitar duplicados
                             _uiState.value = _uiState.value.copy(
                                 errorMessage = "Ya existe un inquilino activo con el DNI ${inquilino.dni}."
                             )
                         }
                     } else {
-                        // Si no existe, procede con el alta normal
                         ejecutarRegistroNuevo(inquilino)
                     }
                 }
@@ -60,7 +84,6 @@ class InquilinoViewModel : ViewModel() {
         }
     }
 
-    // Consulta en Firestore todos los inquilinos activos
     fun obtenerTodos() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -78,64 +101,46 @@ class InquilinoViewModel : ViewModel() {
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudieron obtener los inquilinos."
+                        errorMessage = error.message ?: "No se pudieron obtener los inquilinos."
                     )
                 }
         }
     }
 
-    // Busca inquilinos activos por numero de DNI
     fun obtenerPorDni(dni: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
             repository.obtenerPorDni(dni)
                 .onSuccess { lista ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        inquilinos = lista
-                    )
+                    _uiState.value = _uiState.value.copy(isLoading = false, inquilinos = lista)
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo buscar por DNI."
+                        errorMessage = error.message ?: "No se pudo buscar por DNI."
                     )
                 }
         }
     }
 
-    // Busca inquilinos activos por coincidencia de nombre
     fun obtenerPorNombre(nombre: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
             repository.obtenerPorNombre(nombre)
                 .onSuccess { lista ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        inquilinos = lista
-                    )
+                    _uiState.value = _uiState.value.copy(isLoading = false, inquilinos = lista)
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo buscar por nombre."
+                        errorMessage = error.message ?: "No se pudo buscar por nombre."
                     )
                 }
         }
     }
 
-    // Actualiza los datos de un inquilino existente y recarga la lista
     fun actualizar(inquilino: Inquilino) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -148,22 +153,20 @@ class InquilinoViewModel : ViewModel() {
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        successMessage = "Datos del inquilino actualizados correctamente."
+                        successMessage = "Datos del inquilino actualizados correctamente.",
+                        inquilinoSeleccionado = null // Cierra la ventana de edición al terminar
                     )
-
                     obtenerTodos()
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo actualizar el inquilino."
+                        errorMessage = error.message ?: "No se pudo actualizar el inquilino."
                     )
                 }
         }
     }
 
-    // Aplica baja logica y actualiza la lista en pantalla
     fun darDeBaja(idInquilino: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -176,22 +179,20 @@ class InquilinoViewModel : ViewModel() {
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        successMessage = "Inquilino dado de baja correctamente."
+                        successMessage = "Inquilino dado de baja correctamente.",
+                        inquilinoDarDeBaja = null // Cierra la ventana de confirmación al terminar
                     )
-
                     obtenerTodos()
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo dar de baja al inquilino."
+                        errorMessage = error.message ?: "No se pudo dar de baja al inquilino."
                     )
                 }
         }
     }
 
-    // Inserta un registro nuevo y lo anexa a la lista local
     private suspend fun ejecutarRegistroNuevo(inquilino: Inquilino) {
         repository.registrar(inquilino)
             .onSuccess { nuevoInquilino ->
@@ -199,7 +200,8 @@ class InquilinoViewModel : ViewModel() {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     inquilinos = listaActualizada,
-                    successMessage = "Inquilino registrado correctamente."
+                    successMessage = "Inquilino registrado correctamente.",
+                    mostrandoFormularioRegistro = false // Cierra el formulario automáticamente
                 )
             }
             .onFailure { error ->
@@ -210,7 +212,6 @@ class InquilinoViewModel : ViewModel() {
             }
     }
 
-    // Cambia active a true y suma el inquilino de vuelta a la lista activa
     fun reactivarInquilino(inquilino: Inquilino) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -226,7 +227,8 @@ class InquilinoViewModel : ViewModel() {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         inquilinos = listaActualizada,
-                        successMessage = "Inquilino reactivado con éxito."
+                        successMessage = "Inquilino reactivado con éxito.",
+                        mostrandoFormularioRegistro = false // Cierra el formulario
                     )
                 }
                 .onFailure { error ->
@@ -238,7 +240,6 @@ class InquilinoViewModel : ViewModel() {
         }
     }
 
-    // Cierra el dialogo de reactivacion si el usuario cancela
     fun cancelarReactivacion() {
         _uiState.value = _uiState.value.copy(
             inquilinoInactivoDetectado = null,
@@ -246,18 +247,10 @@ class InquilinoViewModel : ViewModel() {
         )
     }
 
-    // Limpia alertas de error o confirmacion
     fun limpiarMensajes() {
         _uiState.value = _uiState.value.copy(
             errorMessage = null,
             successMessage = null
-        )
-    }
-
-    // Quita la seleccion del inquilino actual
-    fun limpiarInquilinoSeleccionado() {
-        _uiState.value = _uiState.value.copy(
-            inquilinoSeleccionado = null
         )
     }
 }

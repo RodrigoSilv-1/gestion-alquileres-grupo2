@@ -1,5 +1,6 @@
 package com.example.gestionalquileres.data.auth
 
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.AppUser
 
 interface AuthRepository {
@@ -7,14 +8,14 @@ interface AuthRepository {
     suspend fun register(
         email: String,
         password: String
-    ): Result<AppUser>
+    ): AppResult<AppUser>
 
     suspend fun login(
         email: String,
         password: String
-    ): Result<AppUser>
+    ): AppResult<AppUser>
 
-    suspend fun getCurrentUser(): Result<AppUser>
+    suspend fun getCurrentUser(): AppResult<AppUser>
 
     fun logout()
 

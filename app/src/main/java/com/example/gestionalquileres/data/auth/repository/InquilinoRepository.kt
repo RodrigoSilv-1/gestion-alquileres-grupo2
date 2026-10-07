@@ -1,18 +1,18 @@
 package com.example.gestionalquileres.data.repository
 
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inquilino
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class InquilinoRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+class InquilinoRepository @Inject constructor(
+    private val firestore: FirebaseFirestore
 ) {
 
-    // Referencia a la coleccion principal en Firestore
     private val collection = firestore.collection("inquilinos")
 
-    // Guarda un nuevo inquilino generando un ID unico en Firestore
-    suspend fun registrar(inquilino: Inquilino): Result<Inquilino> {
+    suspend fun registrar(inquilino: Inquilino): AppResult<Inquilino> {
         return try {
             val documento = collection.document()
 
@@ -23,14 +23,13 @@ class InquilinoRepository(
 
             documento.set(nuevoInquilino).await()
 
-            Result.success(nuevoInquilino)
+            AppResult.Exito(nuevoInquilino)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Trae solo los inquilinos que estan activos
-    suspend fun obtenerTodos(): Result<List<Inquilino>> {
+    suspend fun obtenerTodos(): AppResult<List<Inquilino>> {
         return try {
             val snapshot = collection
                 .whereEqualTo("active", true)
@@ -41,14 +40,13 @@ class InquilinoRepository(
                 documento.toObject(Inquilino::class.java)
             }
 
-            Result.success(inquilinos)
+            AppResult.Exito(inquilinos)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Filtra inquilinos activos por coincidencia exacta de DNI
-    suspend fun obtenerPorDni(dni: String): Result<List<Inquilino>> {
+    suspend fun obtenerPorDni(dni: String): AppResult<List<Inquilino>> {
         return try {
             val snapshot = collection
                 .whereEqualTo("dni", dni)
@@ -60,14 +58,13 @@ class InquilinoRepository(
                 documento.toObject(Inquilino::class.java)
             }
 
-            Result.success(inquilinos)
+            AppResult.Exito(inquilinos)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Busca inquilinos activos por coincidencia de texto en el nombre
-    suspend fun obtenerPorNombre(nombre: String): Result<List<Inquilino>> {
+    suspend fun obtenerPorNombre(nombre: String): AppResult<List<Inquilino>> {
         return try {
             val snapshot = collection
                 .whereEqualTo("active", true)
@@ -82,17 +79,16 @@ class InquilinoRepository(
                     inquilino.nombre.contains(nombre, ignoreCase = true)
                 }
 
-            Result.success(inquilinos)
+            AppResult.Exito(inquilinos)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Sobrescribe los datos de un inquilino existente usando su ID
-    suspend fun actualizar(inquilino: Inquilino): Result<Inquilino> {
+    suspend fun actualizar(inquilino: Inquilino): AppResult<Inquilino> {
         return try {
             if (inquilino.idInquilino.isBlank()) {
-                return Result.failure(
+                return AppResult.Error(
                     Exception("El ID del inquilino es obligatorio.")
                 )
             }
@@ -102,17 +98,16 @@ class InquilinoRepository(
                 .set(inquilino)
                 .await()
 
-            Result.success(inquilino)
+            AppResult.Exito(inquilino)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Baja logica: no borra el documento, solo marca active = false
-    suspend fun darDeBaja(idInquilino: String): Result<Unit> {
+    suspend fun darDeBaja(idInquilino: String): AppResult<Unit> {
         return try {
             if (idInquilino.isBlank()) {
-                return Result.failure(
+                return AppResult.Error(
                     Exception("El ID del inquilino es obligatorio.")
                 )
             }
@@ -122,14 +117,13 @@ class InquilinoRepository(
                 .update("active", false)
                 .await()
 
-            Result.success(Unit)
+            AppResult.Exito(Unit)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Comprueba si un DNI ya existe en la base de datos (activo o inactivo)
-    suspend fun buscarPorDniCualquiera(dni: String): Result<Inquilino?> {
+    suspend fun buscarPorDniCualquiera(dni: String): AppResult<Inquilino?> {
         return try {
             val snapshot = collection
                 .whereEqualTo("dni", dni)
@@ -138,14 +132,13 @@ class InquilinoRepository(
                 .await()
 
             val inquilino = snapshot.documents.firstOrNull()?.toObject(Inquilino::class.java)
-            Result.success(inquilino)
+            AppResult.Exito(inquilino)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Vuelve a activar un inquilino dado de baja y actualiza su informacion
-    suspend fun reactivarYActualizar(inquilino: Inquilino): Result<Inquilino> {
+    suspend fun reactivarYActualizar(inquilino: Inquilino): AppResult<Inquilino> {
         return try {
             val inquilinoReactivado = inquilino.copy(active = true)
             collection
@@ -153,9 +146,9 @@ class InquilinoRepository(
                 .set(inquilinoReactivado)
                 .await()
 
-            Result.success(inquilinoReactivado)
+            AppResult.Exito(inquilinoReactivado)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 }

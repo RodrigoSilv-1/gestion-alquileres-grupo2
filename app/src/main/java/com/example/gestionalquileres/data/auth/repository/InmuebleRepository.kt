@@ -1,37 +1,32 @@
-package com.example.gestionalquileres.data.auth.repository
+package com.example.gestionalquileres.data.repository
 
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
-import com.example.gestionalquileres.domain.model.Inquilino
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class InmuebleRepository (
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+class InmuebleRepository @Inject constructor(
+    private val firestore: FirebaseFirestore
 ) {
 
-    // Referencia a la coleccion principal en Firestore
     private val collection = firestore.collection("inmuebles")
 
-    // Guarda un nuevo inmueble generando un ID único en Firestore
-    suspend fun registrar(inmueble: Inmueble): Result<Inmueble> {
+    suspend fun registrar(inmueble: Inmueble): AppResult<Inmueble> {
         return try {
             val documento = collection.document()
-
             val nuevoInmueble = inmueble.copy(
                 idInmueble = documento.id,
                 active = true
             )
-
             documento.set(nuevoInmueble).await()
-
-            Result.success(nuevoInmueble)
+            AppResult.Exito(nuevoInmueble)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Trae solo los inmuebles que están activos
-    suspend fun obtenerTodos(): Result<List<Inmueble>> {
+    suspend fun obtenerTodos(): AppResult<List<Inmueble>> {
         return try {
             val snapshot = collection
                 .whereEqualTo("active", true)
@@ -41,61 +36,16 @@ class InmuebleRepository (
             val inmuebles = snapshot.documents.mapNotNull { documento ->
                 documento.toObject(Inmueble::class.java)
             }
-
-            Result.success(inmuebles)
+            AppResult.Exito(inmuebles)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Filtra inmuebles activos por coincidencia exacta del código postal
-    suspend fun obtenerPorCodigoPostal(codigoPostal: String): Result<List<Inmueble>> {
-        return try {
-            val snapshot = collection
-                .whereEqualTo("codigoPostal", codigoPostal)
-                .whereEqualTo("active", true)
-                .get()
-                .await()
-
-            val inmuebles = snapshot.documents.mapNotNull { documento ->
-                documento.toObject(Inmueble::class.java)
-            }
-
-            Result.success(inmuebles)
-        } catch (error: Exception) {
-            Result.failure(error)
-        }
-    }
-
-    // Busca inmuebles activos por coincidencia de texto en el distrito
-    suspend fun obtenerporDistrito(distrito: String): Result<List<Inmueble>> {
-        return try {
-            val snapshot = collection
-                .whereEqualTo("active", true)
-                .get()
-                .await()
-
-            val inmuebles = snapshot.documents
-                .mapNotNull { documento ->
-                    documento.toObject(Inmueble::class.java)
-                }
-                .filter { inmueble ->
-                    inmueble.distrito.contains(distrito, ignoreCase = true)
-                }
-
-            Result.success(inmuebles)
-        } catch (error: Exception) {
-            Result.failure(error)
-        }
-    }
-
-    // Sobrescribe los datos de un inmueble existente usando su ID
-    suspend fun actualizar(inmueble: Inmueble): Result<Inmueble> {
+    suspend fun actualizar(inmueble: Inmueble): AppResult<Inmueble> {
         return try {
             if (inmueble.idInmueble.isBlank()) {
-                return Result.failure(
-                    Exception("El ID del inmueble es obligatorio.")
-                )
+                return AppResult.Error(Exception("El ID del inmueble es obligatorio."))
             }
 
             collection
@@ -103,19 +53,16 @@ class InmuebleRepository (
                 .set(inmueble)
                 .await()
 
-            Result.success(inmueble)
+            AppResult.Exito(inmueble)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Baja lógica: no borra el documento, solo marca active = false
-    suspend fun darDeBaja(idInmueble: String): Result<Unit> {
+    suspend fun darDeBaja(idInmueble: String): AppResult<Unit> {
         return try {
             if (idInmueble.isBlank()) {
-                return Result.failure(
-                    Exception("El ID del inmueble es obligatorio.")
-                )
+                return AppResult.Error(Exception("El ID del inmueble es obligatorio."))
             }
 
             collection
@@ -123,14 +70,13 @@ class InmuebleRepository (
                 .update("active", false)
                 .await()
 
-            Result.success(Unit)
+            AppResult.Exito(Unit)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
-    // Vuelve a activar un inmueble dado de baja y actualiza su información
-    suspend fun reactivarYActualizar(inmueble: Inmueble): Result<Inmueble> {
+    suspend fun reactivarYActualizar(inmueble: Inmueble): AppResult<Inmueble> {
         return try {
             val inmuebleReactivado = inmueble.copy(active = true)
             collection
@@ -138,9 +84,9 @@ class InmuebleRepository (
                 .set(inmuebleReactivado)
                 .await()
 
-            Result.success(inmuebleReactivado)
+            AppResult.Exito(inmuebleReactivado)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,47 +31,46 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.gestionalquileres.domain.model.Inmueble
-import com.example.gestionalquileres.domain.model.Inquilino
-import com.example.gestionalquileres.ui.inquilinos.EditarInquilinoScreen
-import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
-import com.example.gestionalquileres.ui.inquilinos.RegistrarInquilinoScreen
-import com.example.gestionalquileres.ui.inquilinos.uriABase64
 import java.io.ByteArrayOutputStream
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 fun uriABase64(context: Context, uri: Uri): String? {
     return try {
         val inputStream = context.contentResolver.openInputStream(uri)
         val bitmapOriginal = BitmapFactory.decodeStream(inputStream) ?: return null
 
-        // Redimensionar para no exceder el limite por documento
         val maxDimension = 400f
         val escala = maxDimension / Math.max(bitmapOriginal.width, bitmapOriginal.height).toFloat()
         val anchoFinal = if (escala < 1.0f) (bitmapOriginal.width * escala).toInt() else bitmapOriginal.width
@@ -104,7 +102,6 @@ fun RegistrarInmuebleScreen(
     var numeroPisos by remember { mutableStateOf("") }
     var fotografiaBase64 by remember { mutableStateOf<String?>(null) }
 
-    // Selector de fotos nativo de Android
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -130,6 +127,7 @@ fun RegistrarInmuebleScreen(
         OutlinedTextField(
             value = distrito,
             onValueChange = { distrito = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Distrito") }
         )
@@ -139,6 +137,7 @@ fun RegistrarInmuebleScreen(
         OutlinedTextField(
             value = direccion,
             onValueChange = { direccion = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Dirección") }
         )
@@ -148,6 +147,7 @@ fun RegistrarInmuebleScreen(
         OutlinedTextField(
             value = numeroDireccion,
             onValueChange = { numeroDireccion = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Número de Dirección") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -159,6 +159,7 @@ fun RegistrarInmuebleScreen(
         OutlinedTextField(
             value = codigoPostal,
             onValueChange = { codigoPostal = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Código Postal") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -171,6 +172,7 @@ fun RegistrarInmuebleScreen(
         OutlinedTextField(
             value = numeroPisos,
             onValueChange = { numeroPisos = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Número de Pisos") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -187,7 +189,6 @@ fun RegistrarInmuebleScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Previsualización y selector de imagen
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -238,7 +239,6 @@ fun RegistrarInmuebleScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botones de acción
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -310,6 +310,7 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = distrito,
             onValueChange = { distrito = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Distrito") }
         )
@@ -319,6 +320,7 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = direccion,
             onValueChange = { direccion = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Direccion") }
         )
@@ -328,6 +330,7 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = numeroDireccion,
             onValueChange = { numeroDireccion = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Número de Dirección") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -339,6 +342,7 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = codigoPostal,
             onValueChange = { codigoPostal = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Código Postal") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -351,6 +355,7 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = numeroPisos,
             onValueChange = { numeroPisos = it },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Número de Pisos") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -448,7 +453,7 @@ fun EditarInmuebleScreen(
     }
 }
 
-// Pantalla principal: listado, búsquedas y control de navegación
+// Pantalla principal con estado 100% desacoplado
 @Composable
 fun InmuebleScreen(
     viewModel: InmuebleViewModel,
@@ -457,57 +462,91 @@ fun InmuebleScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Carga la lista inicial desde la base de datos
     LaunchedEffect(Unit) {
         viewModel.obtenerTodos()
     }
 
-    var inmuebleAEditar by remember { mutableStateOf<Inmueble?>(null) }
-    var mostrandoFormularioRegistro by remember { mutableStateOf(false) }
-    var tipoBusqueda by remember { mutableStateOf("Distrito") }
-    var textoBusqueda by remember { mutableStateOf("") }
-
     when {
-        mostrandoFormularioRegistro -> {
+        uiState.mostrandoFormularioRegistro -> {
             RegistrarInmuebleScreen(
                 onGuardar = { nuevoInmueble ->
                     viewModel.registrar(nuevoInmueble)
                 },
                 onCancelar = {
-                    mostrandoFormularioRegistro = false
+                    viewModel.mostrarFormularioRegistro(false)
                 }
             )
 
-            // Cierra el formulario cuando la operación se guarda correctamente
+            uiState.inmuebleInactivoDetectado?.let { inactivo ->
+                AlertDialog(
+                    onDismissRequest = { viewModel.cancelarReactivacion() },
+                    title = { Text("Inmueble encontrado en el historial") },
+                    text = {
+                        Text("Este inmueble fue dado de baja anteriormente.\n\n¿Deseas reactivarlo y actualizar sus datos?")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.reactivarInmueble(inactivo) }) {
+                            Text("Reactivar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.cancelarReactivacion() }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
+            }
+
             LaunchedEffect(uiState.successMessage) {
                 if (uiState.successMessage != null) {
-                    mostrandoFormularioRegistro = false
                     viewModel.limpiarMensajes()
                 }
             }
         }
 
-        inmuebleAEditar != null -> {
+        uiState.inmuebleSeleccionado != null -> {
             EditarInmuebleScreen(
-                inmueble = inmuebleAEditar!!,
+                inmueble = uiState.inmuebleSeleccionado!!,
                 onGuardar = { actualizado ->
                     viewModel.actualizar(actualizado)
-                    inmuebleAEditar = null
                 },
                 onCancelar = {
-                    inmuebleAEditar = null
+                    viewModel.seleccionarInmuebleParaEditar(null)
                 }
             )
         }
 
         else -> {
+            // Manejo del AlertDialog de Dar de Baja leyendo desde el estado
+            if (uiState.inmuebleDarDeBaja != null) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.seleccionarInmuebleParaBaja(null) },
+                    title = { Text("Dar de baja") },
+                    text = { Text("¿Deseas dar de baja el inmueble seleccionado?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.darDeBaja(uiState.inmuebleDarDeBaja!!.idInmueble)
+                            }
+                        ) {
+                            Text("Sí", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.seleccionarInmuebleParaBaja(null) }) {
+                            Text("No")
+                        }
+                    }
+                )
+            }
+
             Column(
                 modifier = modifier
                     .fillMaxSize()
                     .statusBarsPadding()
                     .padding(16.dp)
             ) {
-                // Barra superior: volver y botón para nuevo registro
+                // Barra superior
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -526,7 +565,7 @@ fun InmuebleScreen(
                             )
                         }
                         Text(
-                            text = "Lista de Inmuebles",
+                            text = "Inmuebles",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
@@ -534,7 +573,7 @@ fun InmuebleScreen(
                     Button(
                         onClick = {
                             viewModel.limpiarMensajes()
-                            mostrandoFormularioRegistro = true
+                            viewModel.mostrarFormularioRegistro(true)
                         }
                     ) {
                         Text("Nuevo")
@@ -543,30 +582,49 @@ fun InmuebleScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Filtro para elegir criterio de búsqueda
+                // Filtro visualmente alineado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(onClick = { tipoBusqueda = "Distrito" }) {
-                        Text("Distrito")
+                    Button(
+                        onClick = { viewModel.actualizarTipoBusqueda("Distrito") },
+                        colors = if (uiState.tipoBusqueda == "Distrito") ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Text("Distrito", color = if (uiState.tipoBusqueda == "Distrito") Color.White else MaterialTheme.colorScheme.primary)
                     }
-                    Button(onClick = { tipoBusqueda = "Código Postal" }) {
-                        Text("Código Postal")
+                    Button(
+                        onClick = { viewModel.actualizarTipoBusqueda("Código Postal") },
+                        colors = if (uiState.tipoBusqueda == "Código Postal") ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Text("Código Postal", color = if (uiState.tipoBusqueda == "Código Postal") Color.White else MaterialTheme.colorScheme.primary)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Barra de Búsqueda Moderna
                 OutlinedTextField(
-                    value = textoBusqueda,
-                    onValueChange = { textoBusqueda = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Buscar por $tipoBusqueda") },
+                    value = uiState.textoBusqueda,
+                    onValueChange = { viewModel.actualizarTextoBusqueda(it) },
+                    placeholder = { Text("Buscar por ${uiState.tipoBusqueda}...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Buscar",
+                            tint = Color.Gray
+                        )
+                    },
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.LightGray
+                    ),
                     singleLine = true
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -574,11 +632,11 @@ fun InmuebleScreen(
                 ) {
                     Button(
                         onClick = {
-                            if (textoBusqueda.isNotBlank()) {
-                                if (tipoBusqueda == "Distrito") {
-                                    viewModel.obtenerPorDistrito(textoBusqueda)
+                            if (uiState.textoBusqueda.isNotBlank()) {
+                                if (uiState.tipoBusqueda == "Distrito") {
+                                    viewModel.obtenerPorDistrito(uiState.textoBusqueda)
                                 } else {
-                                    viewModel.obtenerPorCodigoPostal(textoBusqueda)
+                                    viewModel.obtenerPorCodigoPostal(uiState.textoBusqueda)
                                 }
                             }
                         }
@@ -588,7 +646,7 @@ fun InmuebleScreen(
 
                     Button(
                         onClick = {
-                            textoBusqueda = ""
+                            viewModel.actualizarTextoBusqueda("")
                             viewModel.obtenerTodos()
                         }
                     ) {
@@ -608,112 +666,86 @@ fun InmuebleScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(uiState.inmuebles) { inmueble ->
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    // Muestra foto si tiene, o círculo con la inicial I, haciendo referencia a inmueble
-                                    if (!inmueble.fotografia.isNullOrBlank()) {
-                                        val bytes = remember(inmueble.fotografia) {
-                                            Base64.decode(inmueble.fotografia, Base64.DEFAULT)
-                                        }
-                                        AsyncImage(
-                                            model = bytes,
-                                            contentDescription = "Foto de ${inmueble.idInmueble}",
-                                            modifier = Modifier
-                                                .height(100.dp)
-                                                .width(55.dp)
-                                                .clip(RoundedCornerShape(8.dp)),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .height(100.dp)
-                                                .width(55.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(MaterialTheme.colorScheme.primaryContainer),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Home,
-                                                contentDescription = "Sin fotografía",
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                        }
-                                    }
-
-                                    // Datos principales y botones de gestión
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = inmueble.distrito,
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        Text(
-                                            text = "Dirección: ${inmueble.direccion} ${inmueble.numeroDireccion}",
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            text = "Código Postal: ${inmueble.codigoPostal}",
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            text = if (inmueble.numeroPisos > 0)
-                                                "# de pisos: ${inmueble.numeroPisos}"
-                                            else
-                                                "# de pisos: Sin registrar",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Button(onClick = { inmuebleAEditar = inmueble }) {
-                                                Text("Modificar")
-                                            }
-
-                                            var inmuebleDarDeBaja by remember {
-                                                mutableStateOf<Inmueble?>(null)
-                                            }
-
-                                            OutlinedButton(onClick = { inmuebleDarDeBaja = inmueble }) {
-                                                Text("Dar de baja")
-                                            }
-
-                                            // Confirmación antes de aplicar la baja lógica
-                                            if (inmuebleDarDeBaja != null) {
-                                                AlertDialog(
-                                                    onDismissRequest = { inmuebleDarDeBaja = null },
-                                                    title = { Text("Dar de baja") },
-                                                    text = { Text("¿Deseas dar de baja el inmueble seleccionado?") },
-                                                    confirmButton = {
-                                                        TextButton(
-                                                            onClick = {
-                                                                viewModel.darDeBaja(inmuebleDarDeBaja!!.idInmueble)
-                                                                inmuebleDarDeBaja = null
-                                                            }
-                                                        ) {
-                                                            Text("Sí")
-                                                        }
-                                                    },
-                                                    dismissButton = {
-                                                        TextButton(onClick = { inmuebleDarDeBaja = null }) {
-                                                            Text("No")
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            InmuebleCard(
+                                inmueble = inmueble,
+                                onModificar = { viewModel.seleccionarInmuebleParaEditar(it) },
+                                onDarDeBaja = { viewModel.seleccionarInmuebleParaBaja(it) }
+                            )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+// DISEÑO DE LA TARJETA DEL INMUEBLE
+@Composable
+fun InmuebleCard(
+    inmueble: Inmueble,
+    onModificar: (Inmueble) -> Unit,
+    onDarDeBaja: (Inmueble) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Imagen o Ícono
+            if (!inmueble.fotografia.isNullOrBlank()) {
+                val bytes = remember(inmueble.fotografia) { Base64.decode(inmueble.fotografia, Base64.DEFAULT) }
+                AsyncImage(
+                    model = bytes, contentDescription = null,
+                    modifier = Modifier.size(70.dp).clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier.size(70.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Home, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Información del inmueble (AHORA USA TYPE.KT)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = inmueble.distrito,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium // Toma el tamaño y grosor del Theme
+                )
+                Text(
+                    text = "${inmueble.direccion} ${inmueble.numeroDireccion}",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "C.P: ${inmueble.codigoPostal}",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = if (inmueble.numeroPisos > 0) "# de pisos: ${inmueble.numeroPisos}" else "# de pisos: Sin registrar",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            // Botones
+            Row {
+                IconButton(onClick = { onModificar(inmueble) }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Modificar", tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = { onDarDeBaja(inmueble) }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Dar de baja", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
