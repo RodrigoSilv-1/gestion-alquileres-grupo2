@@ -7,7 +7,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import javax.inject.Singleton
+import com.google.firebase.auth.GoogleAuthProvider
 
+@Singleton
 class FirebaseAuthRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore
@@ -15,18 +18,19 @@ class FirebaseAuthRepository @Inject constructor(
 
     override suspend fun register(
         email: String,
-        password: String
+        password: String,
+        role: UserRole
     ): AppResult<AppUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
 
             val firebaseUser = result.user
-                ?: return AppResult.Error(Exception("No se pudo crear el usuario."))
+                ?: return Result.failure(Exception("No se pudo crear el usuario."))
 
             val appUser = AppUser(
                 uid = firebaseUser.uid,
                 email = firebaseUser.email ?: email,
-                role = UserRole.SECRETARIO.name,
+                role = role.name,
                 active = true
             )
 
@@ -52,7 +56,47 @@ class FirebaseAuthRepository @Inject constructor(
             AppResult.Error(error)
         }
     }
+    override suspend fun signInWithGoogle(
+        idToken: String,
+        role: UserRole
+    ): AppResult<AppUser> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
 
+            val result = auth.signInWithCredential(credential).await()
+
+            val firebaseUser = result.user
+                ?: return Result.failure(Exception("No se pudo iniciar sesión con Google."))
+
+            val userDocument = firestore.collection("users")
+                .document(firebaseUser.uid)
+
+            val existingDocument = userDocument.get().await()
+            val existingUser = existingDocument.toObject(AppUser::class.java)
+
+            if (existingUser != null) {
+                if (!existingUser.active) {
+                    auth.signOut()
+                    return Result.failure(Exception("Tu usuario está desactivado."))
+                }
+
+                return Result.success(existingUser)
+            }
+
+            val newUser = AppUser(
+                uid = firebaseUser.uid,
+                email = firebaseUser.email ?: "",
+                role = role.name,
+                active = true
+            )
+
+            userDocument.set(newUser).await()
+
+            Result.success(newUser)
+        } catch (error: Exception) {
+            Result.failure(error)
+        }
+    }
     override suspend fun getCurrentUser(): AppResult<AppUser> {
         return try {
             val firebaseUser = auth.currentUser

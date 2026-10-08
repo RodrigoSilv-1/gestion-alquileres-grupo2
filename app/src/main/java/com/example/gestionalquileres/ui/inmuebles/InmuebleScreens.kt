@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,6 +40,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,13 +50,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +69,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.gestionalquileres.domain.model.Inmueble
+import com.example.gestionalquileres.domain.model.Inquilino
+import com.example.gestionalquileres.ui.inquilinos.EditarInquilinoScreen
+import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
+import com.example.gestionalquileres.ui.inquilinos.RegistrarInquilinoScreen
+import com.example.gestionalquileres.ui.inquilinos.uriABase64
 import java.io.ByteArrayOutputStream
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -100,6 +112,7 @@ fun RegistrarInmuebleScreen(
     var numeroDireccion by remember { mutableStateOf("") }
     var codigoPostal by remember { mutableStateOf("") }
     var numeroPisos by remember { mutableStateOf("") }
+    var unidadesPorPiso by remember { mutableStateOf("") } // NUEVO: Estado para unidades por piso
     var fotografiaBase64 by remember { mutableStateOf<String?>(null) }
 
     val selectorFotoLauncher = rememberLauncherForActivityResult(
@@ -137,7 +150,6 @@ fun RegistrarInmuebleScreen(
         OutlinedTextField(
             value = direccion,
             onValueChange = { direccion = it },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Dirección") }
         )
@@ -147,7 +159,6 @@ fun RegistrarInmuebleScreen(
         OutlinedTextField(
             value = numeroDireccion,
             onValueChange = { numeroDireccion = it },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Número de Dirección") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -175,6 +186,19 @@ fun RegistrarInmuebleScreen(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Número de Pisos") },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
+            )
+        )
+
+        // NUEVO: OutlinedTextField para unidades por piso
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = unidadesPorPiso,
+            onValueChange = { unidadesPorPiso = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Unidades / Departamentos por Piso") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
             )
@@ -258,6 +282,7 @@ fun RegistrarInmuebleScreen(
                         numeroDireccion = numeroDireccion.trim(),
                         codigoPostal = codigoPostal.trim(),
                         numeroPisos = numeroPisos.toIntOrNull() ?: 0,
+                        unidadesPorPiso = unidadesPorPiso.toIntOrNull() ?: 0,
                         fotografia = fotografiaBase64
                     )
                     onGuardar(nuevoInmueble)
@@ -283,6 +308,7 @@ fun EditarInmuebleScreen(
     var numeroDireccion by remember { mutableStateOf(inmueble.numeroDireccion) }
     var codigoPostal by remember { mutableStateOf(inmueble.codigoPostal) }
     var numeroPisos by remember { mutableStateOf(inmueble.numeroPisos.toString()) }
+    var unidadesPorPiso by remember { mutableStateOf(inmueble.unidadesPorPiso.toString()) } // NUEVO
     var fotografiaBase64 by remember { mutableStateOf(inmueble.fotografia) }
 
     val selectorFotoLauncher = rememberLauncherForActivityResult(
@@ -310,7 +336,6 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = distrito,
             onValueChange = { distrito = it },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Distrito") }
         )
@@ -320,9 +345,7 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = direccion,
             onValueChange = { direccion = it },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Direccion") }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -330,7 +353,6 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = numeroDireccion,
             onValueChange = { numeroDireccion = it },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Número de Dirección") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -342,7 +364,6 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = codigoPostal,
             onValueChange = { codigoPostal = it },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Código Postal") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -355,9 +376,23 @@ fun EditarInmuebleScreen(
         OutlinedTextField(
             value = numeroPisos,
             onValueChange = { numeroPisos = it },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
+            enabled = false,
             label = { Text("Número de Pisos") },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
+            )
+        )
+
+        // NUEVO: Campo para editar unidades por piso
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = unidadesPorPiso,
+            onValueChange = { unidadesPorPiso = it },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = false,
+            label = { Text("Unidades / Departamentos por Piso") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
             )
@@ -453,7 +488,191 @@ fun EditarInmuebleScreen(
     }
 }
 
-// Pantalla principal con estado 100% desacoplado
+@Composable
+fun DetalleInmuebleScreen(
+    inmueble: Inmueble,
+    viewModel: InmuebleViewModel,
+    onVolver: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Estados locales para controlar el diálogo de edición de precio
+    var unidadSeleccionadaParaEditar by remember { mutableStateOf<com.example.gestionalquileres.domain.model.UnidadAlquilable?>(null) }
+    var nuevoPrecioTexto by remember { mutableStateOf("") }
+
+    // Cargar las unidades al abrir la pantalla
+    LaunchedEffect(inmueble.idInmueble) {
+        viewModel.obtenerUnidadesPorInmueble(inmueble.idInmueble)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .padding(16.dp)
+    ) {
+        // Barra superior
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(onClick = onVolver) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver")
+            }
+            Column {
+                Text(
+                    text = inmueble.distrito,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = "${inmueble.direccion} ${inmueble.numeroDireccion}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Unidades Alquilables",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Listado de unidades
+        when {
+            uiState.isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            uiState.unidadesAlquilables.isEmpty() -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No hay unidades registradas para este inmueble.")
+                }
+            }
+            else -> {
+                val unidadesOrdenadas = uiState.unidadesAlquilables.sortedWith(
+                    compareBy({ it.piso }, { it.numeroUnidad })
+                )
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(unidadesOrdenadas) { unidad ->
+                        val textoEstado = if (!unidad.estaOcupada) "Disponible" else "No Disponible"
+                        val colorSuperficie = if (!unidad.estaOcupada)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.errorContainer
+
+                        // MODIFICACIÓN: Hacemos la Card interactiva con clickable para editar el precio
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    unidadSeleccionadaParaEditar = unidad
+                                    // Precarga el precio actual, si es mayor a 0, si no dejamos vacío
+                                    nuevoPrecioTexto = if (unidad.precioRenta > 0.0) unidad.precioRenta.toString() else ""
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = unidad.nombreFormateado.ifBlank { "Unidad ${unidad.numeroUnidad}" },
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        text = "Piso: ${unidad.piso} - Unidad: ${unidad.numeroUnidad}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    // NUEVO: Muestra el precio de la renta en la tarjeta
+                                    Text(
+                                        text = "Renta: $${unidad.precioRenta}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = colorSuperficie
+                                ) {
+                                    Text(
+                                        text = textoEstado,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // NUEVO: Diálogo emergente para editar el precio de la unidad seleccionada
+    if (unidadSeleccionadaParaEditar != null) {
+        AlertDialog(
+            onDismissRequest = { unidadSeleccionadaParaEditar = null },
+            title = { Text("Editar Precio de Renta") },
+            text = {
+                Column {
+                    Text("Asigna o modifica el precio mensual para la ${unidadSeleccionadaParaEditar?.nombreFormateado}:")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = nuevoPrecioTexto,
+                        onValueChange = { nuevoPrecioTexto = it },
+                        label = { Text("Precio de Renta ($)") },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val precioConvertido = nuevoPrecioTexto.toDoubleOrNull() ?: 0.0
+                        // Llamamos al ViewModel que creamos previamente para actualizar Firestore
+                        viewModel.actualizarPrecioUnidad(
+                            inmuebleId = inmueble.idInmueble,
+                            unidadId = unidadSeleccionadaParaEditar!!.id,
+                            nuevoPrecio = precioConvertido
+                        )
+                        unidadSeleccionadaParaEditar = null
+                    }
+                ) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { unidadSeleccionadaParaEditar = null }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+// Pantalla principal: listado, búsquedas y control de navegación
 @Composable
 fun InmuebleScreen(
     viewModel: InmuebleViewModel,
@@ -546,7 +765,6 @@ fun InmuebleScreen(
                     .statusBarsPadding()
                     .padding(16.dp)
             ) {
-                // Barra superior
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -565,7 +783,7 @@ fun InmuebleScreen(
                             )
                         }
                         Text(
-                            text = "Inmuebles",
+                            text = "Lista de Inmuebles",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
@@ -582,7 +800,6 @@ fun InmuebleScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Filtro visualmente alineado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -603,7 +820,6 @@ fun InmuebleScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Barra de Búsqueda Moderna
                 OutlinedTextField(
                     value = uiState.textoBusqueda,
                     onValueChange = { viewModel.actualizarTextoBusqueda(it) },

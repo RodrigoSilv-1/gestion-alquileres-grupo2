@@ -101,7 +101,8 @@ class InquilinoViewModel @Inject constructor(
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "No se pudieron obtener los inquilinos."
+                        errorMessage = error.message
+                            ?: "No se pudieron obtener los inquilinos."
                     )
                 }
         }
@@ -109,16 +110,23 @@ class InquilinoViewModel @Inject constructor(
 
     fun obtenerPorDni(dni: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null
+            )
 
             repository.obtenerPorDni(dni)
                 .onSuccess { lista ->
-                    _uiState.value = _uiState.value.copy(isLoading = false, inquilinos = lista)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        inquilinos = lista
+                    )
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "No se pudo buscar por DNI."
+                        errorMessage = error.message
+                            ?: "No se pudo buscar por DNI."
                     )
                 }
         }
@@ -161,7 +169,8 @@ class InquilinoViewModel @Inject constructor(
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "No se pudo actualizar el inquilino."
+                        errorMessage = error.message
+                            ?: "No se pudo actualizar el inquilino."
                     )
                 }
         }
@@ -187,7 +196,8 @@ class InquilinoViewModel @Inject constructor(
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "No se pudo dar de baja al inquilino."
+                        errorMessage = error.message
+                            ?: "No se pudo dar de baja al inquilino."
                     )
                 }
         }
@@ -251,6 +261,13 @@ class InquilinoViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             errorMessage = null,
             successMessage = null
+        )
+    }
+
+    // Quita la seleccion del inquilino actual
+    fun limpiarInquilinoSeleccionado() {
+        _uiState.value = _uiState.value.copy(
+            inquilinoSeleccionado = null
         )
     }
 }

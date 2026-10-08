@@ -72,4 +72,7 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.55")
     ksp("com.google.dagger:hilt-compiler:2.55")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0") // Clave para usar Hilt con Compose
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 }

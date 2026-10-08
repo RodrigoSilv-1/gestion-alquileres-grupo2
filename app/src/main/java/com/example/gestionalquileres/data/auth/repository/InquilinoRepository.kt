@@ -10,6 +10,7 @@ class InquilinoRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
 
+    // Referencia a la coleccion principal en Firestore
     private val collection = firestore.collection("inquilinos")
 
     suspend fun registrar(inquilino: Inquilino): AppResult<Inquilino> {

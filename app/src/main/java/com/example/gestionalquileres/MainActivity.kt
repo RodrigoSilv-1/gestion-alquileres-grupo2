@@ -32,7 +32,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,6 +42,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -59,7 +64,38 @@ import com.example.gestionalquileres.ui.inmuebles.InmuebleViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
 import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
 import com.example.gestionalquileres.ui.theme.GestionAlquileresTheme
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import com.example.gestionalquileres.domain.model.AppUser
+import com.example.gestionalquileres.domain.model.UserRole
+import com.example.gestionalquileres.ui.auth.AuthUiState
+import com.example.gestionalquileres.ui.auth.AuthViewModel
+import com.example.gestionalquileres.ui.inmuebles.InmuebleScreen
+import com.example.gestionalquileres.ui.inmuebles.InmuebleViewModel
+import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
+import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.RadioButton
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.example.gestionalquileres.ui.contrato.ContratoScreen
+import com.example.gestionalquileres.ui.contrato.ContratoViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -67,6 +103,8 @@ class MainActivity : ComponentActivity() {
     private val authViewModel: AuthViewModel by viewModels()
     private val inquilinoViewModel: InquilinoViewModel by viewModels()
     private val inmuebleViewModel: InmuebleViewModel by viewModels()
+
+    private val contratoViewModel: ContratoViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,20 +122,28 @@ class MainActivity : ComponentActivity() {
                             user = uiState.currentUser!!,
                             onLogout = authViewModel::logout,
                             inquilinoViewModel = inquilinoViewModel,
-                            inmuebleViewModel = inmuebleViewModel
+                            inmuebleViewModel = inmuebleViewModel,
+                            contratoViewModel = contratoViewModel
                         )
                     }
 
                     showRegister -> RegisterScreen(
                         uiState = uiState,
                         onRegister = authViewModel::register,
-                        onGoToLogin = { showRegister = false }
+                        onGoToLogin = { showRegister = false },
+                        onClearError = authViewModel::clearError,
+                        onGoogleSignIn = authViewModel::signInWithGoogle,
+                        onGoogleError = authViewModel::showError
+
                     )
 
                     else -> LoginScreen(
                         uiState = uiState,
                         onLogin = authViewModel::login,
-                        onGoToRegister = { showRegister = true }
+                        onGoToRegister = { showRegister = true },
+                        onClearError = authViewModel::clearError,
+                        onGoogleSignIn = authViewModel::signInWithGoogle,
+                        onGoogleError = authViewModel::showError
                     )
                 }
             }
@@ -117,15 +163,24 @@ fun LoadingScreen() {
         Text("Cargando...", style = MaterialTheme.typography.bodyLarge)
     }
 }
-
 @Composable
 fun LoginScreen(
     uiState: AuthUiState,
     onLogin: (String, String) -> Unit,
-    onGoToRegister: () -> Unit
+    onGoToRegister: () -> Unit,
+    onClearError: () -> Unit,
+    onGoogleSignIn: (String, UserRole) -> Unit,
+    onGoogleError: (String) -> Unit
+
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null) {
+            delay(3000)
+            onClearError()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -135,12 +190,16 @@ fun LoginScreen(
             contentScale = ContentScale.Crop
         )
 
+        // DEGRADADO
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.35f))
+                .background(
+                    Color.Black.copy(alpha = 0.35f)
+                )
         )
 
+        // CONTENIDO
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -148,7 +207,11 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Spacer(modifier = Modifier.height(50.dp))
+
+
+
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
@@ -174,7 +237,6 @@ fun LoginScreen(
                 label = { Text("Correo electrónico", style = MaterialTheme.typography.bodyLarge) },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyLarge,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
@@ -200,8 +262,10 @@ fun LoginScreen(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
                     disabledContainerColor = Color.White,
+
                     unfocusedBorderColor = Color(0xFF555555),
                     focusedBorderColor = Color(0xFF1565C0),
+
                     unfocusedLabelColor = Color(0xFF555555),
                     focusedLabelColor = Color(0xFF1565C0)
                 )
@@ -209,6 +273,7 @@ fun LoginScreen(
 
             if (uiState.errorMessage != null) {
                 Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
                     text = uiState.errorMessage,
                     color = Color.White,
@@ -228,8 +293,17 @@ fun LoginScreen(
             ) {
                 Text("Iniciar sesión", style = MaterialTheme.typography.labelLarge)
             }
+            Spacer(modifier = Modifier.height(12.dp))
 
             TextButton(onClick = onGoToRegister) {
+            GoogleSignInButton(
+                role = UserRole.ADMIN,
+                onGoogleToken = onGoogleSignIn,
+                onGoogleError = onGoogleError
+            )
+            TextButton(
+                onClick = onGoToRegister
+            ) {
                 Text(
                     text = "¿No tienes cuenta? Regístrate",
                     color = Color.White,
@@ -243,12 +317,24 @@ fun LoginScreen(
 @Composable
 fun RegisterScreen(
     uiState: AuthUiState,
-    onRegister: (String, String, String) -> Unit,
-    onGoToLogin: () -> Unit
+    onRegister: (String, String, String, UserRole) -> Unit,
+    onGoToLogin: () -> Unit,
+    onClearError: () -> Unit,
+    onGoogleSignIn: (String, UserRole) -> Unit,
+    onGoogleError: (String) -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var selectedRole by rememberSaveable {
+        mutableStateOf(UserRole.SECRETARIO.name)
+    }
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null) {
+            delay(3000)
+            onClearError()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -258,12 +344,14 @@ fun RegisterScreen(
             contentScale = ContentScale.Crop
         )
 
+        // CAPA OSCURA
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.35f))
         )
 
+        // CONTENIDO
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -271,6 +359,7 @@ fun RegisterScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Spacer(modifier = Modifier.height(50.dp))
 
             Text(
@@ -282,6 +371,7 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // CORREO
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -302,6 +392,7 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // CONTRASEÑA
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -323,6 +414,7 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // CONFIRMAR CONTRASEÑA
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
@@ -341,9 +433,32 @@ fun RegisterScreen(
                     focusedLabelColor = Color(0xFF1565C0)
                 )
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
+            Text("Selecciona un rol")
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = selectedRole == UserRole.SECRETARIO.name,
+                    onClick = { selectedRole = UserRole.SECRETARIO.name }
+                )
+                Text("Secretario")
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = selectedRole == UserRole.ADMIN.name,
+                    onClick = { selectedRole = UserRole.ADMIN.name }
+                )
+                Text("Administrador")
+            }
             if (uiState.errorMessage != null) {
                 Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
                     text = uiState.errorMessage,
                     color = Color.White,
@@ -353,8 +468,16 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // BOTÓN REGISTRAR
             Button(
-                onClick = { onRegister(email, password, confirmPassword) },
+                onClick = {
+                    onRegister(
+                        email,
+                        password,
+                        confirmPassword,
+                        UserRole.valueOf(selectedRole)
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF1565C0),
@@ -364,7 +487,18 @@ fun RegisterScreen(
                 Text("Registrarme", style = MaterialTheme.typography.labelLarge)
             }
 
-            TextButton(onClick = onGoToLogin) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            GoogleSignInButton(
+                role = UserRole.valueOf(selectedRole),
+                onGoogleToken = onGoogleSignIn,
+                onGoogleError = onGoogleError
+            )
+
+            // VOLVER AL LOGIN
+            TextButton(
+                onClick = onGoToLogin
+            ) {
                 Text(
                     text = "Ya tengo una cuenta",
                     color = Color.White,
@@ -375,16 +509,18 @@ fun RegisterScreen(
     }
 }
 
-// Pantalla principal (Panel de control)
 @Composable
 fun HomeScreen(
     user: AppUser,
     onLogout: () -> Unit,
     inquilinoViewModel: InquilinoViewModel,
-    inmuebleViewModel: InmuebleViewModel
+    inmuebleViewModel: InmuebleViewModel,
+    contratoViewModel: ContratoViewModel
 ) {
     var mostrarInquilinos by rememberSaveable { mutableStateOf(false) }
     var mostrarInmuebles by rememberSaveable { mutableStateOf(false) }
+    var mostrarContratos by rememberSaveable { mutableStateOf(false) }
+
 
     if (mostrarInmuebles) {
         InmuebleScreen(
@@ -396,56 +532,65 @@ fun HomeScreen(
             viewModel = inquilinoViewModel,
             onVolver = { mostrarInquilinos = false }
         )
+    } else if (mostrarContratos) { // <-- NUEVA PANTALLA
+        ContratoScreen(
+            viewModel = contratoViewModel,
+            onVolver = { mostrarContratos = false }
+        )
     } else {
         val roleText = if (user.role == UserRole.ADMIN.name) "Administrador" else "Secretario"
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(40.dp))
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Sesión iniciada",
+            style = MaterialTheme.typography.headlineMedium
+        )
 
-            Text(
-                text = "¡Bienvenido!",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(user.email)
+        Text("Rol: $roleText")
 
-            Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.Gray
-            )
+        Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Rol: $roleText",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.secondary
-            )
+        if (user.role == UserRole.ADMIN.name) {
+            Text("Módulos del Administrador")
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            if (user.role == UserRole.ADMIN.name) {
-                ModuloCard(
-                    titulo = "Gestión de Inquilinos",
-                    icono = Icons.Default.Group,
-                    onClick = { mostrarInquilinos = true }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                ModuloCard(
-                    titulo = "Gestión de Inmuebles",
-                    icono = Icons.Default.Domain,
-                    onClick = { mostrarInmuebles = true }
-                )
-            } else {
-                Text("Aquí irán los módulos de recibos y cobros.", style = MaterialTheme.typography.bodyLarge)
+            Button(
+                onClick = {
+                    mostrarInquilinos = true
+                }
+            ) {
+                Text("Gestión de Inquilinos")
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {
+                    mostrarInmuebles = true
+                }
+            ) {
+                Text("Gestión de Inmuebles")
+            }
+
+            Button(
+                onClick = {
+                    mostrarContratos = true
+                }
+            ) {
+                Text("Gestión de Contratos")
+            }
+        } else {
+            Text("Aquí irán los módulos de recibos y cobros.")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(onClick = onLogout) {
                 Text(
@@ -495,5 +640,71 @@ fun ModuloCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
+    }
+}
+@Composable
+fun GoogleSignInButton(
+    role: UserRole,
+    onGoogleToken: (String, UserRole) -> Unit,
+    onGoogleError: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val webClientId = stringResource(R.string.google_web_client_id)
+    Button(
+        onClick = {
+            coroutineScope.launch {
+                try {
+                    val credentialManager = CredentialManager.create(context)
+
+                    val googleIdOption = GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId(webClientId)
+                        .setAutoSelectEnabled(false)
+                        .build()
+
+                    val request = GetCredentialRequest.Builder()
+                        .addCredentialOption(googleIdOption)
+                        .build()
+
+                    val result = credentialManager.getCredential(
+                        context,
+                        request
+                    )
+
+                    val credential = result.credential
+
+                    if (
+                        credential is CustomCredential &&
+                        credential.type ==
+                        GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                    ) {
+                        val googleCredential =
+                            GoogleIdTokenCredential.createFrom(credential.data)
+
+                        onGoogleToken(
+                            googleCredential.idToken,
+                            role
+                        )
+                    } else {
+                        onGoogleError(
+                            "No se pudo obtener una cuenta de Google."
+                        )
+                    }
+                } catch (error: Exception) {
+                    onGoogleError(
+                        "No se pudo iniciar sesión con Google."
+                    )
+                }
+            }
+
+        },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF1565C0),
+            contentColor = Color.White
+        )
+    ) {
+        Text("Continuar con Google")
     }
 }

@@ -104,7 +104,9 @@ fun RegistrarInquilinoScreen(
     var sexo by remember { mutableStateOf("") }
     var fotografiaBase64 by remember { mutableStateOf<String?>(null) }
     var telefono by remember { mutableStateOf("") }
+    var sueldo by remember { mutableStateOf("") } // <-- NUEVO ESTADO
 
+    // Selector de fotos nativo de Android
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -169,6 +171,19 @@ fun RegistrarInquilinoScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // NUEVO: Campo para el sueldo
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = sueldo,
+            onValueChange = { sueldo = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Sueldo Mensual ($)") },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Menu desplegable para el sexo
         var sexoExpandido by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -181,6 +196,7 @@ fun RegistrarInquilinoScreen(
                 label = { Text("Sexo") },
                 trailingIcon = { Text(if (sexoExpandido) "▲" else "▼") }
             )
+            // Captura el clic sobre todo el campo para abrir el menu
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -217,6 +233,7 @@ fun RegistrarInquilinoScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Previsualizacion y selector de imagen
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -286,7 +303,8 @@ fun RegistrarInquilinoScreen(
                         telefono = telefono.trim(),
                         edad = edad.toIntOrNull() ?: 0,
                         sexo = sexo.trim(),
-                        fotografia = fotografiaBase64
+                        fotografia = fotografiaBase64,
+                        sueldo = sueldo.toDoubleOrNull() ?: 0.0 // <-- NUEVO
                     )
                     onGuardar(nuevoInquilino)
                 },
@@ -312,6 +330,7 @@ fun EditarInquilinoScreen(
     var sexo by remember { mutableStateOf(inquilino.sexo) }
     var fotografiaBase64 by remember { mutableStateOf(inquilino.fotografia) }
     var telefono by remember { mutableStateOf(inquilino.telefono) }
+    var sueldo by remember { mutableStateOf(if (inquilino.sueldo > 0.0) inquilino.sueldo.toString() else "") } // <-- NUEVO ESTADO
 
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -377,6 +396,18 @@ fun EditarInquilinoScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        OutlinedTextField(
+            value = sueldo,
+            onValueChange = { sueldo = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Sueldo Mensual ($)") },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Selector desplegable para actualizar sexo
         var sexoExpandido by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -494,7 +525,8 @@ fun EditarInquilinoScreen(
                         telefono = telefono.trim(),
                         edad = edad.toIntOrNull() ?: inquilino.edad,
                         sexo = sexo.trim(),
-                        fotografia = fotografiaBase64
+                        fotografia = fotografiaBase64,
+                        sueldo = sueldo.toDoubleOrNull() ?: 0.0 // <-- NUEVO CAMPO
                     )
                     onGuardar(inquilinoActualizado)
                 },
@@ -506,7 +538,6 @@ fun EditarInquilinoScreen(
     }
 }
 
-// Pantalla principal: listado, busquedas y control de navegacion con estado DESACOPLADO
 @Composable
 fun InquilinoScreen(
     viewModel: InquilinoViewModel,
@@ -606,7 +637,6 @@ fun InquilinoScreen(
                     .statusBarsPadding()
                     .padding(16.dp)
             ) {
-                // Barra superior
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -625,7 +655,7 @@ fun InquilinoScreen(
                             )
                         }
                         Text(
-                            text = "Inquilinos",
+                            text = "Lista de Inquilinos",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
@@ -642,7 +672,6 @@ fun InquilinoScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Filtro leyendo desde el ViewModel
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -663,7 +692,6 @@ fun InquilinoScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Barra de Búsqueda leyendo desde el ViewModel
                 OutlinedTextField(
                     value = uiState.textoBusqueda,
                     onValueChange = { viewModel.actualizarTextoBusqueda(it) },
@@ -685,6 +713,8 @@ fun InquilinoScreen(
                     ),
                     singleLine = true
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
