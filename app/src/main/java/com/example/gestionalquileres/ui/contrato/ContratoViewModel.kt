@@ -3,28 +3,31 @@ package com.example.gestionalquileres.ui.contrato
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionalquileres.data.repository.ContratoRepository
-import com.example.gestionalquileres.data.repository.InquilinoRepository
 import com.example.gestionalquileres.data.auth.repository.InmuebleRepository
+import com.example.gestionalquileres.data.auth.repository.InquilinoRepository
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class ContratoViewModel : ViewModel() {
-
-    private val contratoRepository = ContratoRepository()
-    private val inquilinoRepository = InquilinoRepository()
-    private val inmuebleRepository = InmuebleRepository()
+@HiltViewModel
+class ContratoViewModel @Inject constructor(
+    private val contratoRepository: ContratoRepository,
+    private val inquilinoRepository: InquilinoRepository,
+    private val inmuebleRepository: InmuebleRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContratoUiState())
     val uiState: StateFlow<ContratoUiState> = _uiState.asStateFlow()
 
-    // Carga inicial de datos para las pantallas y selectores
     fun cargarDatosIniciales() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
@@ -33,8 +36,9 @@ class ContratoViewModel : ViewModel() {
             val inquilinosResult = inquilinoRepository.obtenerTodos()
             val inmueblesResult = inmuebleRepository.obtenerTodos()
 
-            if (contratosResult.isSuccess && inquilinosResult.isSuccess && inmueblesResult.isSuccess) {
-                val inmuebles = inmueblesResult.getOrDefault(emptyList())
+            if (contratosResult is AppResult.Exito && inquilinosResult is AppResult.Exito && inmueblesResult is AppResult.Exito) {
+                // NOTA: Si tu clase AppResult usa una variable distinta a "data" (como "datos" o "valor"), cámbiala aquí
+                val inmuebles = inmueblesResult.valor
                 val unidadesDisponiblesList = mutableListOf<Pair<Inmueble, UnidadAlquilable>>()
                 val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
 
@@ -52,15 +56,13 @@ class ContratoViewModel : ViewModel() {
                                 unidadesDisponiblesList.add(Pair(inmueble, unidad))
                             }
                         }
-                    } catch (e: Exception) {
-                        // Ignorar errores individuales si falla un inmueble
-                    }
+                    } catch (e: Exception) { }
                 }
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    contratosActivos = contratosResult.getOrDefault(emptyList()),
-                    listaInquilinos = inquilinosResult.getOrDefault(emptyList()),
+                    contratosActivos = contratosResult.valor,
+                    listaInquilinos = inquilinosResult.valor,
                     listaUnidadesDisponibles = unidadesDisponiblesList
                 )
             } else {
@@ -72,13 +74,11 @@ class ContratoViewModel : ViewModel() {
         }
     }
 
-    // Seleccionar inquilino y evaluar solvencia automáticamente si ya hay unidad elegida
     fun seleccionarInquilino(inquilino: Inquilino) {
         _uiState.value = _uiState.value.copy(inquilinoSeleccionado = inquilino)
         evaluarSolvencia()
     }
 
-    // Seleccionar unidad y su inmueble padre, y evaluar solvencia automáticamente
     fun seleccionarUnidad(inmueble: Inmueble, unidad: UnidadAlquilable) {
         _uiState.value = _uiState.value.copy(
             inmuebleSeleccionado = inmueble,
@@ -87,13 +87,10 @@ class ContratoViewModel : ViewModel() {
         evaluarSolvencia()
     }
 
-    // Actualizar fechas
     fun actualizarFechas(inicio: String, fin: String) {
         _uiState.value = _uiState.value.copy(fechaInicio = inicio, fechaFin = fin)
     }
 
-    // **REGLA DE NEGOCIO: Evaluación de Solvencia**
-    // Regla de ejemplo: El sueldo del inquilino debe ser al menos el doble (2.0x) al precio de la renta.
     private fun evaluarSolvencia() {
         val inquilino = _uiState.value.inquilinoSeleccionado
         val unidad = _uiState.value.unidadSeleccionada
@@ -114,7 +111,6 @@ class ContratoViewModel : ViewModel() {
             return
         }
 
-        // REGLA: El sueldo debe ser al menos el doble de la renta
         val rentaMinimaRequerida = renta * 2.0
         val esApto = sueldo >= rentaMinimaRequerida
 
@@ -130,7 +126,6 @@ class ContratoViewModel : ViewModel() {
         )
     }
 
-    // Registrar el contrato formalmente
     fun registrarContrato() {
         val estado = _uiState.value
         val inquilino = estado.inquilinoSeleccionado
@@ -152,7 +147,6 @@ class ContratoViewModel : ViewModel() {
             return
         }
 
-        // --- VALIDACIÓN DE FECHA DE INICIO Y 3 MESES ---
         try {
             val partesInicio = estado.fechaInicio.split("-")
             val partesFin = estado.fechaFin.split("-")
@@ -166,28 +160,21 @@ class ContratoViewModel : ViewModel() {
                 val mesFin = partesFin[1].toInt()
                 val diaFin = partesFin[2].toInt()
 
-                // 1. Obtener la fecha actual del sistema de forma sencilla
                 val fechaActualCalendar = java.util.Calendar.getInstance()
                 val calInicio = java.util.Calendar.getInstance().apply {
                     set(anioInicio, mesInicio - 1, diaInicio)
                 }
-                val calFin = java.util.Calendar.getInstance().apply {
-                    set(anioFin, mesFin - 1, diaFin)
-                }
 
-                // Limpiamos las horas para comparar solo los días con precisión
                 fechaActualCalendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
                 fechaActualCalendar.set(java.util.Calendar.MINUTE, 0)
                 fechaActualCalendar.set(java.util.Calendar.SECOND, 0)
                 fechaActualCalendar.set(java.util.Calendar.MILLISECOND, 0)
 
-                // 2. Validar que la fecha de inicio no sea anterior al día de hoy
                 if (calInicio.before(fechaActualCalendar)) {
                     _uiState.value = estado.copy(errorMessage = "La fecha de inicio no puede ser anterior a la fecha actual.")
                     return
                 }
 
-                // 3. Validar que la fecha de fin sea posterior a la de inicio
                 val totalMesesInicio = anioInicio * 12 + mesInicio
                 val totalMesesFin = anioFin * 12 + mesFin
                 val diferenciaMeses = totalMesesFin - totalMesesInicio
@@ -197,7 +184,6 @@ class ContratoViewModel : ViewModel() {
                     return
                 }
 
-                // 4. Validar la regla de los 3 meses mínimos
                 if (diferenciaMeses < 3 || (diferenciaMeses == 3 && diaFin < diaInicio)) {
                     _uiState.value = estado.copy(errorMessage = "El contrato debe tener una duración mínima de 3 meses.")
                     return
@@ -214,10 +200,9 @@ class ContratoViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = estado.copy(isLoading = true, errorMessage = null)
 
-            // Validación: Verificar si el inquilino ya tiene un contrato activo
             val contratoExistenteResult = contratoRepository.obtenerContratoActivoPorInquilino(inquilino.idInquilino)
 
-            if (contratoExistenteResult.isSuccess && contratoExistenteResult.getOrNull() != null) {
+            if (contratoExistenteResult is AppResult.Exito && contratoExistenteResult.valor != null) {
                 _uiState.value = estado.copy(
                     isLoading = false,
                     errorMessage = "Este inquilino ya cuenta con un contrato activo vigente en otra unidad."
@@ -239,8 +224,8 @@ class ContratoViewModel : ViewModel() {
                 fechaFin = estado.fechaFin
             )
 
-            contratoRepository.registrarContrato(nuevoContrato)
-                .onSuccess {
+            when (val resultado = contratoRepository.registrarContrato(nuevoContrato)) {
+                is AppResult.Exito -> {
                     _uiState.value = estado.copy(
                         isLoading = false,
                         successMessage = "Contrato registrado con éxito.",
@@ -252,34 +237,35 @@ class ContratoViewModel : ViewModel() {
                     )
                     cargarDatosIniciales()
                 }
-                .onFailure { error ->
+                is AppResult.Error -> {
                     _uiState.value = estado.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Error al registrar el contrato."
+                        errorMessage = resultado.excepcion.message ?: "Error al registrar el contrato."
                     )
                 }
+            }
         }
     }
 
-    // Finalizar contrato
     fun finalizarContrato(idContrato: String, inmuebleId: String, unidadId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
-            contratoRepository.finalizarContrato(idContrato, inmuebleId, unidadId)
-                .onSuccess {
+            when (val resultado = contratoRepository.finalizarContrato(idContrato, inmuebleId, unidadId)) {
+                is AppResult.Exito -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         successMessage = "Contrato finalizado y unidad liberada correctamente."
                     )
                     cargarDatosIniciales()
                 }
-                .onFailure { error ->
+                is AppResult.Error -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Error al finalizar el contrato."
+                        errorMessage = resultado.excepcion.message ?: "Error al finalizar el contrato."
                     )
                 }
+            }
         }
     }
 

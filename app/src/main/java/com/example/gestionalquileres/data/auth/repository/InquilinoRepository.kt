@@ -1,4 +1,4 @@
-package com.example.gestionalquileres.data.repository
+package com.example.gestionalquileres.data.auth.repository
 
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inquilino

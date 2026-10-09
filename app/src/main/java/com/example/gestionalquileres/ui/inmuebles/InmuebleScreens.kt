@@ -75,8 +75,6 @@ import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
 import com.example.gestionalquileres.ui.inquilinos.RegistrarInquilinoScreen
 import com.example.gestionalquileres.ui.inquilinos.uriABase64
 import java.io.ByteArrayOutputStream
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 
 fun uriABase64(context: Context, uri: Uri): String? {
     return try {

@@ -1,17 +1,17 @@
 package com.example.gestionalquileres.data.repository
 
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class ContratoRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+class ContratoRepository @Inject constructor(
+    private val firestore: FirebaseFirestore
 ) {
-
     private val contratosCollection = firestore.collection("contratos")
 
-    // Registra un nuevo contrato usando una Transacción para asegurar la consistencia total
-    suspend fun registrarContrato(contrato: Contrato): Result<Contrato> {
+    suspend fun registrarContrato(contrato: Contrato): AppResult<Contrato> {
         return try {
             val documentoRef = contratosCollection.document()
             val contratoConId = contrato.copy(
@@ -36,14 +36,13 @@ class ContratoRepository(
                 transaction.update(unidadRef, "estaOcupada", true)
             }.await()
 
-            Result.success(contratoConId)
+            AppResult.Exito(contratoConId)
         } catch (e: Exception) {
-            Result.failure(e)
+            AppResult.Error(e)
         }
     }
 
-    // Obtiene todos los contratos activos (vigentes)
-    suspend fun obtenerContratosActivos(): Result<List<Contrato>> {
+    suspend fun obtenerContratosActivos(): AppResult<List<Contrato>> {
         return try {
             val snapshot = contratosCollection
                 .whereEqualTo("active", true)
@@ -54,14 +53,13 @@ class ContratoRepository(
                 doc.toObject(Contrato::class.java)
             }
 
-            Result.success(contratos)
+            AppResult.Exito(contratos)
         } catch (e: Exception) {
-            Result.failure(e)
+            AppResult.Error(e)
         }
     }
 
-    // NUEVO: Obtiene el contrato activo de un inquilino específico (para validar si ya alquila algo)
-    suspend fun obtenerContratoActivoPorInquilino(inquilinoId: String): Result<Contrato?> {
+    suspend fun obtenerContratoActivoPorInquilino(inquilinoId: String): AppResult<Contrato?> {
         return try {
             val snapshot = contratosCollection
                 .whereEqualTo("inquilinoId", inquilinoId)
@@ -71,14 +69,13 @@ class ContratoRepository(
                 .await()
 
             val contrato = snapshot.documents.firstOrNull()?.toObject(Contrato::class.java)
-            Result.success(contrato)
+            AppResult.Exito(contrato)
         } catch (e: Exception) {
-            Result.failure(e)
+            AppResult.Error(e)
         }
     }
 
-    // NUEVO: Obtiene el historial completo de contratos (tanto activos como inactivos/finalizados)
-    suspend fun obtenerHistorialCompleto(): Result<List<Contrato>> {
+    suspend fun obtenerHistorialCompleto(): AppResult<List<Contrato>> {
         return try {
             val snapshot = contratosCollection
                 .get()
@@ -88,17 +85,16 @@ class ContratoRepository(
                 doc.toObject(Contrato::class.java)
             }
 
-            Result.success(contratos)
+            AppResult.Exito(contratos)
         } catch (e: Exception) {
-            Result.failure(e)
+            AppResult.Error(e)
         }
     }
 
-    // Finaliza un contrato y libera la unidad usando transacción
-    suspend fun finalizarContrato(idContrato: String, inmuebleId: String, unidadId: String): Result<Unit> {
+    suspend fun finalizarContrato(idContrato: String, inmuebleId: String, unidadId: String): AppResult<Unit> {
         return try {
             if (idContrato.isBlank() || inmuebleId.isBlank() || unidadId.isBlank()) {
-                return Result.failure(Exception("Los identificadores son obligatorios para finalizar el contrato."))
+                return AppResult.Error(Exception("Los identificadores son obligatorios para finalizar el contrato."))
             }
 
             val contratoRef = contratosCollection.document(idContrato)
@@ -112,9 +108,9 @@ class ContratoRepository(
                 transaction.update(unidadRef, "estaOcupada", false)
             }.await()
 
-            Result.success(Unit)
+            AppResult.Exito(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            AppResult.Error(e)
         }
     }
 }

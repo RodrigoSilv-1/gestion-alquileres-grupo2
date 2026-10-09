@@ -2,7 +2,7 @@ package com.example.gestionalquileres.ui.inquilinos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.repository.InquilinoRepository
+import com.example.gestionalquileres.data.auth.repository.InquilinoRepository
 import com.example.gestionalquileres.domain.model.Inquilino
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.example.gestionalquileres.domain.model.onSuccess

@@ -25,7 +25,7 @@ class FirebaseAuthRepository @Inject constructor(
             val result = auth.createUserWithEmailAndPassword(email, password).await()
 
             val firebaseUser = result.user
-                ?: return Result.failure(Exception("No se pudo crear el usuario."))
+                ?: return AppResult.Error(Exception("No se pudo crear el usuario."))
 
             val appUser = AppUser(
                 uid = firebaseUser.uid,
@@ -66,7 +66,7 @@ class FirebaseAuthRepository @Inject constructor(
             val result = auth.signInWithCredential(credential).await()
 
             val firebaseUser = result.user
-                ?: return Result.failure(Exception("No se pudo iniciar sesión con Google."))
+                ?: return AppResult.Error(Exception("No se pudo iniciar sesión con Google."))
 
             val userDocument = firestore.collection("users")
                 .document(firebaseUser.uid)
@@ -77,10 +77,10 @@ class FirebaseAuthRepository @Inject constructor(
             if (existingUser != null) {
                 if (!existingUser.active) {
                     auth.signOut()
-                    return Result.failure(Exception("Tu usuario está desactivado."))
+                    return AppResult.Error(Exception("Tu usuario está desactivado."))
                 }
 
-                return Result.success(existingUser)
+                return AppResult.Exito(existingUser)
             }
 
             val newUser = AppUser(
@@ -92,9 +92,9 @@ class FirebaseAuthRepository @Inject constructor(
 
             userDocument.set(newUser).await()
 
-            Result.success(newUser)
+            AppResult.Exito(newUser)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
     override suspend fun getCurrentUser(): AppResult<AppUser> {

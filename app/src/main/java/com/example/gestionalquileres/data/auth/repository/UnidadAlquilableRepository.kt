@@ -1,14 +1,15 @@
 package com.example.gestionalquileres.data.auth.repository
 
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class UnidadAlquilableRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+class UnidadAlquilableRepository @Inject constructor(
+    private val firestore: FirebaseFirestore
 ) {
-    // Obtiene todas las unidades alquilables pertenecientes a un inmueble específico
-    suspend fun obtenerUnidadesPorInmueble(inmuebleId: String): Result<List<UnidadAlquilable>> {
+    suspend fun obtenerUnidadesPorInmueble(inmuebleId: String): AppResult<List<UnidadAlquilable>> {
         return try {
             val snapshot = firestore.collection("inmuebles")
                 .document(inmuebleId)
@@ -17,13 +18,13 @@ class UnidadAlquilableRepository(
                 .await()
 
             val unidades = snapshot.toObjects(UnidadAlquilable::class.java)
-            Result.success(unidades)
+            AppResult.Exito(unidades)
         } catch (e: Exception) {
-            Result.failure(e)
+            AppResult.Error(e)
         }
     }
 
-    suspend fun actualizarPrecioRenta(inmuebleId: String, unidadId: String, nuevoPrecio: Double): Result<Unit> {
+    suspend fun actualizarPrecioRenta(inmuebleId: String, unidadId: String, nuevoPrecio: Double): AppResult<Unit> {
         return try {
             firestore.collection("inmuebles")
                 .document(inmuebleId)
@@ -31,9 +32,9 @@ class UnidadAlquilableRepository(
                 .document(unidadId)
                 .update("precioRenta", nuevoPrecio)
                 .await()
-            Result.success(Unit)
+            AppResult.Exito(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            AppResult.Error(e)
         }
     }
 }

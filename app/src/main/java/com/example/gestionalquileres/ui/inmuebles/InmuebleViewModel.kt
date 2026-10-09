@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionalquileres.domain.model.onSuccess
 import com.example.gestionalquileres.domain.model.onFailure
-import com.example.gestionalquileres.data.repository.InmuebleRepository
 import com.example.gestionalquileres.data.auth.repository.InmuebleRepository
-import com.example.gestionalquileres.data.repository.InquilinoRepository
+import com.example.gestionalquileres.data.auth.repository.InquilinoRepository
+import com.example.gestionalquileres.data.auth.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.domain.model.Inmueble
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.example.gestionalquileres.domain.model.Inquilino
@@ -14,13 +14,13 @@ import com.example.gestionalquileres.ui.inquilinos.InquilinoUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class InmuebleViewModel @Inject constructor(
-    private val repository: InmuebleRepository
+    private val repository: InmuebleRepository,
+    private val unidadRepository: UnidadAlquilableRepository // <-- Repositorio inyectado correctamente por Hilt
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InmuebleUiState())
@@ -66,7 +66,6 @@ class InmuebleViewModel @Inject constructor(
     }
 
     fun obtenerPorCodigoPostal(codigoPostal: String) {
-        // Asume que tienes esta función en tu repositorio
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
@@ -231,8 +230,7 @@ class InmuebleViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
-            val unidadRepository = com.example.gestionalquileres.data.auth.repository.UnidadAlquilableRepository()
-
+            // Ya no instanciamos manualmente, usamos la variable inyectada arriba
             unidadRepository.obtenerUnidadesPorInmueble(inmuebleId)
                 .onSuccess { listaUnidades ->
                     _uiState.value = _uiState.value.copy(
@@ -251,7 +249,7 @@ class InmuebleViewModel @Inject constructor(
 
     fun actualizarPrecioUnidad(inmuebleId: String, unidadId: String, nuevoPrecio: Double) {
         viewModelScope.launch {
-            val unidadRepository = com.example.gestionalquileres.data.auth.repository.UnidadAlquilableRepository()
+            // Ya no instanciamos manualmente, usamos la variable inyectada arriba
             unidadRepository.actualizarPrecioRenta(inmuebleId, unidadId, nuevoPrecio)
                 .onSuccess {
                     obtenerUnidadesPorInmueble(inmuebleId) // Refresca la lista
@@ -280,5 +278,27 @@ class InmuebleViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             inmuebleSeleccionado = null
         )
+    }
+
+    // --- FUNCIONES DE ESTADO DE LA INTERFAZ (UI STATE) ---
+
+    fun mostrarFormularioRegistro(mostrar: Boolean) {
+        _uiState.value = _uiState.value.copy(mostrandoFormularioRegistro = mostrar)
+    }
+
+    fun seleccionarInmuebleParaEditar(inmueble: Inmueble?) {
+        _uiState.value = _uiState.value.copy(inmuebleSeleccionado = inmueble)
+    }
+
+    fun seleccionarInmuebleParaBaja(inmueble: Inmueble?) {
+        _uiState.value = _uiState.value.copy(inmuebleDarDeBaja = inmueble)
+    }
+
+    fun actualizarTipoBusqueda(tipo: String) {
+        _uiState.value = _uiState.value.copy(tipoBusqueda = tipo)
+    }
+
+    fun actualizarTextoBusqueda(texto: String) {
+        _uiState.value = _uiState.value.copy(textoBusqueda = texto)
     }
 }
