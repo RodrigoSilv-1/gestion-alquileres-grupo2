@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.List
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -679,11 +680,23 @@ fun InmuebleScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // NUEVO: Variable de estado local para saber si estamos viendo los detalles/precios de un inmueble
+    var inmuebleEnDetalle by remember { mutableStateOf<Inmueble?>(null) }
+
     LaunchedEffect(Unit) {
         viewModel.obtenerTodos()
     }
 
     when {
+        // NUEVO: Si hay un inmueble seleccionado para ver detalles, mostramos la pantalla de Detalle (Precios)
+        inmuebleEnDetalle != null -> {
+            DetalleInmuebleScreen(
+                inmueble = inmuebleEnDetalle!!,
+                viewModel = viewModel,
+                onVolver = { inmuebleEnDetalle = null } // Al volver, limpiamos la variable
+            )
+        }
+
         uiState.mostrandoFormularioRegistro -> {
             RegistrarInmuebleScreen(
                 onGuardar = { nuevoInmueble ->
@@ -734,7 +747,6 @@ fun InmuebleScreen(
         }
 
         else -> {
-            // Manejo del AlertDialog de Dar de Baja leyendo desde el estado
             if (uiState.inmuebleDarDeBaja != null) {
                 AlertDialog(
                     onDismissRequest = { viewModel.seleccionarInmuebleParaBaja(null) },
@@ -883,7 +895,8 @@ fun InmuebleScreen(
                             InmuebleCard(
                                 inmueble = inmueble,
                                 onModificar = { viewModel.seleccionarInmuebleParaEditar(it) },
-                                onDarDeBaja = { viewModel.seleccionarInmuebleParaBaja(it) }
+                                onDarDeBaja = { viewModel.seleccionarInmuebleParaBaja(it) },
+                                onVerDetalle = { inmuebleEnDetalle = it } // NUEVO: Pasamos la acción al hacer clic en la tarjeta
                             )
                         }
                     }
@@ -898,10 +911,13 @@ fun InmuebleScreen(
 fun InmuebleCard(
     inmueble: Inmueble,
     onModificar: (Inmueble) -> Unit,
-    onDarDeBaja: (Inmueble) -> Unit
+    onDarDeBaja: (Inmueble) -> Unit,
+    onVerDetalle: (Inmueble) -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onVerDetalle(inmueble) }, // Mantenemos toda la tarjeta cliqueable por comodidad
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -929,12 +945,12 @@ fun InmuebleCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Información del inmueble (AHORA USA TYPE.KT)
+            // Información del inmueble
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = inmueble.distrito,
                     color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.titleMedium // Toma el tamaño y grosor del Theme
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Text(
                     text = "${inmueble.direccion} ${inmueble.numeroDireccion}",
@@ -953,8 +969,11 @@ fun InmuebleCard(
                 )
             }
 
-            // Botones
+            // NUEVO: Agregamos un botón visible para "Ver unidades/precios"
             Row {
+                IconButton(onClick = { onVerDetalle(inmueble) }) {
+                    Icon(Icons.Default.List, contentDescription = "Ver Unidades", tint = Color(0xFF4CAF50)) // Color verde para diferenciarlo
+                }
                 IconButton(onClick = { onModificar(inmueble) }) {
                     Icon(Icons.Default.Edit, contentDescription = "Modificar", tint = MaterialTheme.colorScheme.primary)
                 }

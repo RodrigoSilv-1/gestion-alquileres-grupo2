@@ -71,6 +71,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.example.gestionalquileres.ui.contrato.ContratoScreen
 import com.example.gestionalquileres.ui.contrato.ContratoViewModel
+import com.example.gestionalquileres.ui.recibos.ReciboScreen
+import com.example.gestionalquileres.ui.recibos.ReciboViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -79,6 +81,7 @@ class MainActivity : ComponentActivity() {
     private val inquilinoViewModel: InquilinoViewModel by viewModels()
     private val inmuebleViewModel: InmuebleViewModel by viewModels()
     private val contratoViewModel: ContratoViewModel by viewModels()
+    private val reciboViewModel: ReciboViewModel by viewModels() // <-- INYECCIÓN DEL NUEVO VIEWMODEL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,7 +100,8 @@ class MainActivity : ComponentActivity() {
                             onLogout = authViewModel::logout,
                             inquilinoViewModel = inquilinoViewModel,
                             inmuebleViewModel = inmuebleViewModel,
-                            contratoViewModel = contratoViewModel
+                            contratoViewModel = contratoViewModel,
+                            reciboViewModel = reciboViewModel // <-- SE PASA AL HOMESCREEN
                         )
                     }
 
@@ -277,7 +281,7 @@ fun LoginScreen(
             }
         }
     }
-} // <--- AQUÍ FALTABA ESTA LLAVE DE CIERRE PARA SEPARAR LAS FUNCIONES
+}
 
 @Composable
 fun RegisterScreen(
@@ -467,11 +471,13 @@ fun HomeScreen(
     onLogout: () -> Unit,
     inquilinoViewModel: InquilinoViewModel,
     inmuebleViewModel: InmuebleViewModel,
-    contratoViewModel: ContratoViewModel
+    contratoViewModel: ContratoViewModel,
+    reciboViewModel: ReciboViewModel // <-- NUEVO PARÁMETRO
 ) {
     var mostrarInquilinos by rememberSaveable { mutableStateOf(false) }
     var mostrarInmuebles by rememberSaveable { mutableStateOf(false) }
     var mostrarContratos by rememberSaveable { mutableStateOf(false) }
+    var mostrarRecibos by rememberSaveable { mutableStateOf(false) } // <-- NUEVO ESTADO DE NAVEGACIÓN
 
     if (mostrarInmuebles) {
         InmuebleScreen(
@@ -487,6 +493,11 @@ fun HomeScreen(
         ContratoScreen(
             viewModel = contratoViewModel,
             onVolver = { mostrarContratos = false }
+        )
+    } else if (mostrarRecibos) { // <-- NUEVO BLOQUE DE NAVEGACIÓN
+        ReciboScreen(
+            viewModel = reciboViewModel,
+            onVolver = { mostrarRecibos = false }
         )
     } else {
         val roleText = if (user.role == UserRole.ADMIN.name) "Administrador" else "Secretario"
@@ -525,8 +536,16 @@ fun HomeScreen(
                 Button(onClick = { mostrarContratos = true }) {
                     Text("Gestión de Contratos")
                 }
+
             } else {
-                Text("Aquí irán los módulos de recibos y cobros.")
+                Text("Módulos del Secretario")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // El Secretario SOLO ve la Gestión de Recibos
+                Button(onClick = { mostrarRecibos = true }) {
+                    Text("Gestión de Recibos")
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
