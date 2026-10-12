@@ -23,7 +23,6 @@ class ReciboViewModel @Inject constructor(
     private val contratoRepository: ContratoRepository // Inyectado para traer los contratos activos
 ) : ViewModel() {
 
-    // (Aquí iría tu StateFlow tradicional, resumido para el ejemplo)
     private val _uiState = MutableStateFlow(ReciboUiState())
     val uiState: StateFlow<ReciboUiState> = _uiState.asStateFlow()
 
@@ -68,7 +67,7 @@ class ReciboViewModel @Inject constructor(
             val igv = renta * 0.18
             val total = renta + igv + agua + luz + ipc
 
-            // 3. Capturar fecha del sistema (Criterio 3)
+            // 3. Capturar fecha del sistema
             val formatoFecha = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val fechaHoy = formatoFecha.format(Date())
 
@@ -110,7 +109,7 @@ class ReciboViewModel @Inject constructor(
                 is AppResult.Exito -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        recibos = resultado.valor // Recuerda cambiar "data" si tu AppResult usa otro nombre
+                        recibos = resultado.valor
                     )
                 }
                 is AppResult.Error -> {

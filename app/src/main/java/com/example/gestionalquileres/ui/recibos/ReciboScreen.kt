@@ -32,20 +32,36 @@ fun ReciboScreen(
         viewModel.cargarHistorialRecibos()
     }
 
-    // Manejo de mensajes de éxito/error
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage != null) {
-            viewModel.mostrarFormularioRegistro(false) // Cierra el formulario al tener éxito
+            viewModel.mostrarFormularioRegistro(false)
             viewModel.limpiarMensajes()
         }
     }
 
     when {
         uiState.mostrandoFormularioRegistro -> {
+            // ELEVACIÓN DE ESTADO: La pantalla padre retiene la memoria del formulario
+            var expanded by remember { mutableStateOf(false) }
+            var contratoSeleccionado by remember { mutableStateOf<Contrato?>(null) }
+            var agua by remember { mutableStateOf("") }
+            var luz by remember { mutableStateOf("") }
+            var ipc by remember { mutableStateOf("") }
+
             RegistrarReciboScreen(
                 uiState = uiState,
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                contratoSeleccionado = contratoSeleccionado,
+                onContratoSeleccionado = { contratoSeleccionado = it },
+                agua = agua,
+                onAguaChange = { agua = it },
+                luz = luz,
+                onLuzChange = { luz = it },
+                ipc = ipc,
+                onIpcChange = { ipc = it },
                 onCargarContratos = { viewModel.cargarContratosParaCobro() },
-                onGuardar = { contrato, agua, luz, ipc ->
+                onGuardar = { contrato ->
                     viewModel.generarRecibo(contrato, agua, luz, ipc)
                 },
                 onCancelar = { viewModel.mostrarFormularioRegistro(false) }
@@ -125,21 +141,28 @@ fun ReciboScreen(
     }
 }
 
+// -------------------------------------------------------------
+// PANTALLAS DESACOPLADAS (STATELESS)
+// -------------------------------------------------------------
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrarReciboScreen(
     uiState: ReciboUiState,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    contratoSeleccionado: Contrato?,
+    onContratoSeleccionado: (Contrato) -> Unit,
+    agua: String,
+    onAguaChange: (String) -> Unit,
+    luz: String,
+    onLuzChange: (String) -> Unit,
+    ipc: String,
+    onIpcChange: (String) -> Unit,
     onCargarContratos: () -> Unit,
-    onGuardar: (Contrato, String, String, String) -> Unit,
+    onGuardar: (Contrato) -> Unit,
     onCancelar: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var contratoSeleccionado by remember { mutableStateOf<Contrato?>(null) }
-
-    var agua by remember { mutableStateOf("") }
-    var luz by remember { mutableStateOf("") }
-    var ipc by remember { mutableStateOf("") }
-
     LaunchedEffect(Unit) {
         onCargarContratos()
     }
@@ -156,7 +179,7 @@ fun RegistrarReciboScreen(
         // Dropdown para seleccionar a quién cobrar
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
+            onExpandedChange = { onExpandedChange(!expanded) }
         ) {
             OutlinedTextField(
                 value = contratoSeleccionado?.let { "${it.nombreInquilino} - ${it.nombreUnidad}" } ?: "Seleccione un contrato vigente",
@@ -168,17 +191,17 @@ fun RegistrarReciboScreen(
             )
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { onExpandedChange(false) }
             ) {
                 if (uiState.contratosActivos.isEmpty()) {
-                    DropdownMenuItem(text = { Text("No hay contratos vigentes") }, onClick = { expanded = false })
+                    DropdownMenuItem(text = { Text("No hay contratos vigentes") }, onClick = { onExpandedChange(false) })
                 } else {
                     uiState.contratosActivos.forEach { contrato ->
                         DropdownMenuItem(
                             text = { Text("${contrato.nombreInquilino} - ${contrato.nombreUnidad}") },
                             onClick = {
-                                contratoSeleccionado = contrato
-                                expanded = false
+                                onContratoSeleccionado(contrato)
+                                onExpandedChange(false)
                             }
                         )
                     }
@@ -204,7 +227,7 @@ fun RegistrarReciboScreen(
         // Campos variables
         OutlinedTextField(
             value = agua,
-            onValueChange = { agua = it },
+            onValueChange = onAguaChange,
             label = { Text("Agua") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -212,7 +235,7 @@ fun RegistrarReciboScreen(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = luz,
-            onValueChange = { luz = it },
+            onValueChange = onLuzChange,
             label = { Text("Luz") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -220,7 +243,7 @@ fun RegistrarReciboScreen(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = ipc,
-            onValueChange = { ipc = it },
+            onValueChange = onIpcChange,
             label = { Text("IPC (Ajuste)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -242,7 +265,7 @@ fun RegistrarReciboScreen(
                 Text("Cancelar")
             }
             Button(
-                onClick = { onGuardar(contratoSeleccionado!!, agua, luz, ipc) },
+                onClick = { onGuardar(contratoSeleccionado!!) },
                 enabled = contratoSeleccionado != null && !uiState.isLoading,
                 modifier = Modifier.weight(1f)
             ) {
