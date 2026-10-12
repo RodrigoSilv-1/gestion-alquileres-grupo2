@@ -41,6 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -73,6 +76,7 @@ import com.example.gestionalquileres.ui.contrato.ContratoScreen
 import com.example.gestionalquileres.ui.contrato.ContratoViewModel
 import com.example.gestionalquileres.ui.recibos.ReciboScreen
 import com.example.gestionalquileres.ui.recibos.ReciboViewModel
+import androidx.compose.material3.Surface
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -235,8 +239,10 @@ fun LoginScreen(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
                     disabledContainerColor = Color.White,
+
                     unfocusedBorderColor = Color(0xFF555555),
                     focusedBorderColor = Color(0xFF1565C0),
+
                     unfocusedLabelColor = Color(0xFF555555),
                     focusedLabelColor = Color(0xFF1565C0)
                 )
@@ -403,30 +409,48 @@ fun RegisterScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Selecciona un rol")
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedRole == UserRole.SECRETARIO.name,
-                    onClick = { selectedRole = UserRole.SECRETARIO.name }
-                )
-                Text("Secretario")
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedRole == UserRole.ADMIN.name,
-                    onClick = { selectedRole = UserRole.ADMIN.name }
-                )
-                Text("Administrador")
-            }
-            if (uiState.errorMessage != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = Color.White.copy(alpha = 0.90f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(12.dp)
+            ) {
                 Text(
-                    text = uiState.errorMessage,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
+                    text = "Selecciona un rol",
+                    color = Color(0xFF222222),
+                    style = MaterialTheme.typography.titleMedium
                 )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = selectedRole == UserRole.SECRETARIO.name,
+                        onClick = {
+                            selectedRole = UserRole.SECRETARIO.name
+                        }
+                    )
+
+                    Text(
+                        text = "Secretario",
+                        color = Color(0xFF222222)
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = selectedRole == UserRole.ADMIN.name,
+                        onClick = {
+                            selectedRole = UserRole.ADMIN.name
+                        }
+                    )
+
+                    Text(
+                        text = "Administrador",
+                        color = Color(0xFF222222)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -502,60 +526,135 @@ fun HomeScreen(
     } else {
         val roleText = if (user.role == UserRole.ADMIN.name) "Administrador" else "Secretario"
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = "Sesión iniciada",
-                style = MaterialTheme.typography.headlineMedium
+            Image(
+                painter = painterResource(id = R.drawable.edificio2),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = 0.73f
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(user.email)
-            Text("Rol: $roleText")
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // CAJA CON INFORMACIÓN DEL USUARIO
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color.White.copy(alpha = 0.90f),
+                    shadowElevation = 4.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Sesión iniciada",
+                            color = Color(0xFF222222),
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center
+                        )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-            if (user.role == UserRole.ADMIN.name) {
-                Text("Módulos del Administrador")
+                        Text(
+                            text = user.email,
+                            color = Color(0xFF333333),
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Text(
+                            text = "Rol: $roleText",
+                            color = Color(0xFF1565C0),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+// CAJA CON EL NOMBRE DE LOS MÓDULOS
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.90f),
+                    shadowElevation = 3.dp
+                ) {
+                    Text(
+                        text = if (user.role == UserRole.ADMIN.name) {
+                            "Módulos del Administrador"
+                        } else {
+                            "Módulos del Secretario"
+                        },
+                        modifier = Modifier.padding(
+                            horizontal = 20.dp,
+                            vertical = 12.dp
+                        ),
+                        color = Color(0xFF222222),
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = { mostrarInquilinos = true }) {
-                    Text("Gestión de Inquilinos")
+                if (user.role == UserRole.ADMIN.name) {
+                    Button(
+                        onClick = {
+                            mostrarInquilinos = true
+                        }
+                    ) {
+                        Text("Gestión de Inquilinos")
+                    }
+
+                    Button(
+                        onClick = {
+                            mostrarInmuebles = true
+                        }
+                    ) {
+                        Text("Gestión de Inmuebles")
+                    }
+
+                    Button(
+                        onClick = {
+                            mostrarContratos = true
+                        }
+                    ) {
+                        Text("Gestión de Contratos")
+                    }
+                } else {
+                    Button(
+                        onClick = {
+                            mostrarRecibos = true
+                        }
+                    ) {
+                        Text("Gestión de Recibos")
+                    }
                 }
 
-                Button(onClick = { mostrarInmuebles = true }) {
-                    Text("Gestión de Inmuebles")
+                Spacer(modifier = Modifier.height(24.dp))
+
+// BOTÓN CERRAR SESIÓN CON FONDO
+                Button(
+                    onClick = onLogout,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(alpha = 0.90f),
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(
+                        text = "Cerrar sesión",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
-
-                Button(onClick = { mostrarContratos = true }) {
-                    Text("Gestión de Contratos")
-                }
-
-            } else {
-                Text("Módulos del Secretario")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // El Secretario SOLO ve la Gestión de Recibos
-                Button(onClick = { mostrarRecibos = true }) {
-                    Text("Gestión de Recibos")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            TextButton(onClick = onLogout) {
-                Text(
-                    text = "Cerrar sesión",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.error
-                )
             }
         }
     }

@@ -48,7 +48,19 @@ fun ContratoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (mostrarFormulario) "Nuevo Contrato" else "Gestión de Contratos") },
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (mostrarFormulario) "Nuevo Contrato" else "Gestión de Contratos",
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (mostrarFormulario) mostrarFormulario = false else onVolver()
@@ -120,7 +132,6 @@ fun ListaContratosActivos(
                         Text(text = "Inquilino: ${contrato.nombreInquilino}", fontWeight = FontWeight.Bold)
                         Text(text = "DNI: ${contrato.dniInquilino}")
                         Spacer(modifier = Modifier.height(6.dp))
-                        Divider()
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(text = "Inmueble: ${contrato.direccionInmueble} (${contrato.distritoInmueble})")
                         Text(text = "Unidad: ${contrato.nombreUnidad}")
@@ -149,13 +160,19 @@ fun FormularioContrato(
     uiState: ContratoUiState,
     viewModel: ContratoViewModel
 ) {
-    var fechaInicio by remember { mutableStateOf(uiState.fechaInicio) }
-    var fechaFin by remember { mutableStateOf(uiState.fechaFin) }
+    // ¡Un solo estado agrupado en lugar de variables sueltas para las fechas!
+    var formState by remember {
+        mutableStateOf(
+            ContratoFormState(
+                fechaInicio = uiState.fechaInicio,
+                fechaFin = uiState.fechaFin
+            )
+        )
+    }
 
     var expandInquilino by remember { mutableStateOf(false) }
     var expandUnidad by remember { mutableStateOf(false) }
 
-    // Creamos el estado de desplazamiento
     val scrollState = rememberScrollState()
 
     Column(
@@ -235,25 +252,27 @@ fun FormularioContrato(
             }
         }
 
-        // Fechas
+        // Fechas unificadas con el formState
         OutlinedTextField(
-            value = fechaInicio,
-            onValueChange = {
-                fechaInicio = it
-                viewModel.actualizarFechas(it, fechaFin)
+            value = formState.fechaInicio,
+            onValueChange = { nuevaFecha ->
+                formState = formState.copy(fechaInicio = nuevaFecha)
+                viewModel.actualizarFechas(nuevaFecha, formState.fechaFin)
             },
             label = { Text("Fecha de Inicio (Ej. 2026-06-01)") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         OutlinedTextField(
-            value = fechaFin,
-            onValueChange = {
-                fechaFin = it
-                viewModel.actualizarFechas(fechaInicio, it)
+            value = formState.fechaFin,
+            onValueChange = { nuevaFecha ->
+                formState = formState.copy(fechaFin = nuevaFecha)
+                viewModel.actualizarFechas(formState.fechaInicio, nuevaFecha)
             },
             label = { Text("Fecha de Fin (Ej. 2027-06-01)") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         // 3. Resultado de Solvencia

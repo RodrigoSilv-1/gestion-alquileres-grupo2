@@ -47,7 +47,7 @@ class ReciboRepository @Inject constructor(
                 AppResult.Error(Exception("Error al generar el documento de recibo."))
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            AppResult.Error(e) // OJO: Usando AppResult para evitar el bug de Hilt/KSP
         }
     }
 

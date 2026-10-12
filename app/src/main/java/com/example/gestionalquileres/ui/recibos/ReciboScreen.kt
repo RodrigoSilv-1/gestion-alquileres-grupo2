@@ -32,36 +32,20 @@ fun ReciboScreen(
         viewModel.cargarHistorialRecibos()
     }
 
+    // Manejo de mensajes de éxito/error
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage != null) {
-            viewModel.mostrarFormularioRegistro(false)
+            viewModel.mostrarFormularioRegistro(false) // Cierra el formulario al tener éxito
             viewModel.limpiarMensajes()
         }
     }
 
     when {
         uiState.mostrandoFormularioRegistro -> {
-            // ELEVACIÓN DE ESTADO: La pantalla padre retiene la memoria del formulario
-            var expanded by remember { mutableStateOf(false) }
-            var contratoSeleccionado by remember { mutableStateOf<Contrato?>(null) }
-            var agua by remember { mutableStateOf("") }
-            var luz by remember { mutableStateOf("") }
-            var ipc by remember { mutableStateOf("") }
-
             RegistrarReciboScreen(
                 uiState = uiState,
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                contratoSeleccionado = contratoSeleccionado,
-                onContratoSeleccionado = { contratoSeleccionado = it },
-                agua = agua,
-                onAguaChange = { agua = it },
-                luz = luz,
-                onLuzChange = { luz = it },
-                ipc = ipc,
-                onIpcChange = { ipc = it },
                 onCargarContratos = { viewModel.cargarContratosParaCobro() },
-                onGuardar = { contrato ->
+                onGuardar = { contrato, agua, luz, ipc ->
                     viewModel.generarRecibo(contrato, agua, luz, ipc)
                 },
                 onCancelar = { viewModel.mostrarFormularioRegistro(false) }
@@ -82,16 +66,21 @@ fun ReciboScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { onVolver() }
+                        modifier = Modifier
+                            .weight(1f) // Permite que el título ocupe el espacio necesario
+                            .clickable { onVolver() }
                     ) {
                         IconButton(onClick = onVolver) {
                             Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver")
                         }
                         Text(
                             text = "Gestión de Recibos",
-                            style = MaterialTheme.typography.headlineMedium
+                            style = MaterialTheme.typography.headlineMedium,
+                            maxLines = 2 // <--- Permite que baje a la segunda línea si no entra horizontalmente
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Button(
                         onClick = {
@@ -141,28 +130,19 @@ fun ReciboScreen(
     }
 }
 
-// -------------------------------------------------------------
-// PANTALLAS DESACOPLADAS (STATELESS)
-// -------------------------------------------------------------
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrarReciboScreen(
     uiState: ReciboUiState,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    contratoSeleccionado: Contrato?,
-    onContratoSeleccionado: (Contrato) -> Unit,
-    agua: String,
-    onAguaChange: (String) -> Unit,
-    luz: String,
-    onLuzChange: (String) -> Unit,
-    ipc: String,
-    onIpcChange: (String) -> Unit,
     onCargarContratos: () -> Unit,
-    onGuardar: (Contrato) -> Unit,
+    onGuardar: (Contrato, String, String, String) -> Unit,
     onCancelar: () -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // ¡Un solo estado agrupado en lugar de 4 variables sueltas!
+    var formState by remember { mutableStateOf(ReciboFormState()) }
+
     LaunchedEffect(Unit) {
         onCargarContratos()
     }
@@ -179,10 +159,10 @@ fun RegistrarReciboScreen(
         // Dropdown para seleccionar a quién cobrar
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { onExpandedChange(!expanded) }
+            onExpandedChange = { expanded = !expanded }
         ) {
             OutlinedTextField(
-                value = contratoSeleccionado?.let { "${it.nombreInquilino} - ${it.nombreUnidad}" } ?: "Seleccione un contrato vigente",
+                value = formState.contratoSeleccionado?.let { "${it.nombreInquilino} -${it.nombreUnidad}" } ?: "Seleccione un contrato vigente",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Contrato (Inquilino / Unidad)") },
@@ -191,17 +171,17 @@ fun RegistrarReciboScreen(
             )
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { onExpandedChange(false) }
+                onDismissRequest = { expanded = false }
             ) {
                 if (uiState.contratosActivos.isEmpty()) {
-                    DropdownMenuItem(text = { Text("No hay contratos vigentes") }, onClick = { onExpandedChange(false) })
+                    DropdownMenuItem(text = { Text("No hay contratos vigentes") }, onClick = { expanded = false })
                 } else {
                     uiState.contratosActivos.forEach { contrato ->
                         DropdownMenuItem(
-                            text = { Text("${contrato.nombreInquilino} - ${contrato.nombreUnidad}") },
+                            text = { Text("${contrato.nombreInquilino} -${contrato.nombreUnidad}") },
                             onClick = {
-                                onContratoSeleccionado(contrato)
-                                onExpandedChange(false)
+                                formState = formState.copy(contratoSeleccionado = contrato)
+                                expanded = false
                             }
                         )
                     }
@@ -213,7 +193,7 @@ fun RegistrarReciboScreen(
 
         // Campo de Renta Base (Bloqueado)
         OutlinedTextField(
-            value = contratoSeleccionado?.precioRentaAcordado?.toString() ?: "0.0",
+            value = formState.contratoSeleccionado?.precioRentaAcordado?.toString() ?: "0.0",
             onValueChange = {},
             label = { Text("Renta Base Acordada (Fija)") },
             readOnly = true,
@@ -224,26 +204,26 @@ fun RegistrarReciboScreen(
         Text(text = "Servicios del mes (Opcional)", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Campos variables
+        // Campos variables utilizando el estado unificado con `.copy(...)`
         OutlinedTextField(
-            value = agua,
-            onValueChange = onAguaChange,
+            value = formState.agua,
+            onValueChange = { formState = formState.copy(agua = it) },
             label = { Text("Agua") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = luz,
-            onValueChange = onLuzChange,
+            value = formState.luz,
+            onValueChange = { formState = formState.copy(luz = it) },
             label = { Text("Luz") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = ipc,
-            onValueChange = onIpcChange,
+            value = formState.ipc,
+            onValueChange = { formState = formState.copy(ipc = it) },
             label = { Text("IPC (Ajuste)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -265,8 +245,12 @@ fun RegistrarReciboScreen(
                 Text("Cancelar")
             }
             Button(
-                onClick = { onGuardar(contratoSeleccionado!!) },
-                enabled = contratoSeleccionado != null && !uiState.isLoading,
+                onClick = {
+                    formState.contratoSeleccionado?.let { contrato ->
+                        onGuardar(contrato, formState.agua, formState.luz, formState.ipc)
+                    }
+                },
+                enabled = formState.contratoSeleccionado != null && !uiState.isLoading,
                 modifier = Modifier.weight(1f)
             ) {
                 if (uiState.isLoading) {
@@ -297,7 +281,7 @@ fun ReciboCard(recibo: Recibo) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Fecha Emisión: ${recibo.fechaEmision}", style = MaterialTheme.typography.bodyMedium)
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Usamos la función inteligente del modelo para mostrar solo los conceptos válidos
             recibo.obtenerConceptosCobrar().forEach { concepto ->
@@ -310,7 +294,7 @@ fun ReciboCard(recibo: Recibo) {
                 }
             }
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
