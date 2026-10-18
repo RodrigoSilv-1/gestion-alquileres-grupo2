@@ -9,7 +9,7 @@ data class Recibo(
     val montoIgv: Double = 0.0,
     val agua: Double = 0.0,
     val luz: Double = 0.0,
-    val ipc: Double = 0.0,
+    val mantenimiento: Double = 0.0,
     val montoTotal: Double = 0.0,
     val estadoPago: String = "Pendiente"
 ) {
@@ -24,7 +24,7 @@ data class Recibo(
         // Agregamos solo si el secretario ingresó un valor mayor a 0
         if (agua > 0.0) conceptos.add(Pair("Agua", agua))
         if (luz > 0.0) conceptos.add(Pair("Luz", luz))
-        if (ipc > 0.0) conceptos.add(Pair("IPC", ipc))
+        if (mantenimiento > 0.0) conceptos.add(Pair("mantenimiento", mantenimiento))
 
         return conceptos
     }

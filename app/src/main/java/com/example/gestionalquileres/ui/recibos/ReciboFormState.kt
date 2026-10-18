@@ -6,5 +6,5 @@ data class ReciboFormState(
     val contratoSeleccionado: Contrato? = null,
     val agua: String = "",
     val luz: String = "",
-    val ipc: String = ""
+    val mantenimiento: String = ""
 )

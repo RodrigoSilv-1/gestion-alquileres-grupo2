@@ -47,12 +47,13 @@ class ContratoRepository @Inject constructor(
             val snapshot = contratosCollection
                 .whereEqualTo("active", true)
                 .get()
+                //Esperamos que la operación en la nube se complete exitosamente
                 .await()
 
             val contratos = snapshot.documents.mapNotNull { doc ->
                 doc.toObject(Contrato::class.java)
             }
-
+            //recorre los registros obtenidos y los transforma en objetos tipo contrato
             AppResult.Exito(contratos)
         } catch (e: Exception) {
             AppResult.Error(e)

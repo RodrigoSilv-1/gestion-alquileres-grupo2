@@ -26,16 +26,23 @@ fun ReciboScreen(
     onVolver: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // esta variable conecta el vm con la interfaz, permite que ui este pendiente
+    // de cualquier cambio en los datos y actualizarse mostrando la info correcta
     val uiState by viewModel.uiState.collectAsState()
 
+// Se ejecuta este componente cuando la pantalla entra por primera vez
     LaunchedEffect(Unit) {
+        // Dispara la carga inicial de la lista/historial de recibos desde el ViewModel.
         viewModel.cargarHistorialRecibos()
     }
 
-    // Manejo de mensajes de éxito/error
+// Escucha específicamente los cambios en la propiedad 'successMessage' del estado.
     LaunchedEffect(uiState.successMessage) {
+        // Si la propiedad contiene un mensaje de éxito (no es nulo)
         if (uiState.successMessage != null) {
-            viewModel.mostrarFormularioRegistro(false) // Cierra el formulario al tener éxito
+            // Cierra el formulario de registro automáticamente
+            viewModel.mostrarFormularioRegistro(false)
+            // Limpia el mensaje en el ViewModel para evitar ejecuciones repetidas
             viewModel.limpiarMensajes()
         }
     }
@@ -138,9 +145,10 @@ fun RegistrarReciboScreen(
     onGuardar: (Contrato, String, String, String) -> Unit,
     onCancelar: () -> Unit
 ) {
+    // Creamos un estado booleano para controlar si un menú desplegable
     var expanded by remember { mutableStateOf(false) }
-
-    // ¡Un solo estado agrupado en lugar de 4 variables sueltas!
+// Agrupamos todos los campos del formulario en un solo objeto (ReciboFormState)
+// en lugar de declarar variables separadas para el agua, la luz, el importe, etc.,
     var formState by remember { mutableStateOf(ReciboFormState()) }
 
     LaunchedEffect(Unit) {
@@ -161,26 +169,40 @@ fun RegistrarReciboScreen(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded }
         ) {
+            // Creamos una caja de texto con borde que actúa como botón desplegable
             OutlinedTextField(
+                // Mostramos el nombre del inquilino y unidad si ya se eligió uno; si está vacío, mostramos un texto de guía
                 value = formState.contratoSeleccionado?.let { "${it.nombreInquilino} -${it.nombreUnidad}" } ?: "Seleccione un contrato vigente",
+                // Está vacío porque el usuario no escribe aquí, solo selecciona haciendo clic
                 onValueChange = {},
+                // Lo ponemos en modo solo lectura para evitar que se abra el teclado del celular
                 readOnly = true,
+                // El título o etiqueta que flota sobre la caja
                 label = { Text("Contrato (Inquilino / Unidad)") },
+                // Coloca la flechita a la derecha que indica si el menú está abierto o cerrado
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                // Hace que ocupe todo el ancho de la pantalla y se conecte con el menú desplegable
                 modifier = Modifier.menuAnchor().fillMaxWidth()
             )
+            // El menú flotante que se despliega al hacer clic en la caja anterior
             ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+                expanded = expanded, // Controla si el menú está visible (true) o oculto (false)
+                onDismissRequest = { expanded = false } // Si el usuario toca afuera, el menú se cierra
             ) {
+                // Si la lista de contratos activos está vacía
                 if (uiState.contratosActivos.isEmpty()) {
+                    // Mostramos un mensaje de aviso y cerramos el menú si lo presionan
                     DropdownMenuItem(text = { Text("No hay contratos vigentes") }, onClick = { expanded = false })
                 } else {
+                    // Si hay contratos, recorremos la lista uno por uno para mostrarlos en opciones
                     uiState.contratosActivos.forEach { contrato ->
                         DropdownMenuItem(
+                            // Mostramos el nombre del inquilino y su unidad en cada opción del menú
                             text = { Text("${contrato.nombreInquilino} -${contrato.nombreUnidad}") },
                             onClick = {
+                                // Guardamos el contrato que el usuario eligió dentro del estado del formulario
                                 formState = formState.copy(contratoSeleccionado = contrato)
+                                // Cerramos el menú automáticamente después de seleccionar
                                 expanded = false
                             }
                         )

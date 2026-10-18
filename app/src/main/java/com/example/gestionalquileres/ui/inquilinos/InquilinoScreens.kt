@@ -99,16 +99,26 @@ fun RegistrarInquilinoScreen(
     onGuardar: (Inquilino) -> Unit,
     onCancelar: () -> Unit
 ) {
+    // Obtiene el contexto actual de Android (necesario para acceder a recursos y funciones del sistema como la galería).
     val context = LocalContext.current
 
+// usamos remenber y mutableStateOf para crear un objeto tipo InquilinoFormState
+    //para avisar a la ui los cambios que se hagan
     var formState by remember { mutableStateOf(InquilinoFormState()) }
+
+    // Estado booleano para controlar si el menú desplegable (Dropdown) del sexo está abierto (true) o cerrado (false).
     var sexoExpandido by remember { mutableStateOf(false) }
 
+    // Registra un lanzador para abrir el selector de fotos nativo de Android (Photo Picker).
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
+        // Cuando el usuario selecciona una imagen, el sistema nos devuelve su 'uri'
         if (uri != null) {
+            // Comprimimos la imagen seleccionada y la convertimos a formato Base64 usando nuestra función auxiliar
             val fotoComprimida = uriABase64(context, uri)
+
+            // Actualizamos el estado del formulario copiando los datos anteriores y agregando la foto en Base64
             formState = formState.copy(fotografiaBase64 = fotoComprimida)
         }
     }
@@ -233,8 +243,13 @@ fun RegistrarInquilinoScreen(
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
+                // Verificamos si hay una foto guardada en el estado del formulario (que no sea nula ni vacía)
                 if (!formState.fotografiaBase64.isNullOrBlank()) {
+
+                    // Decodificamos el texto Base64 a un arreglo de bytes para que pueda ser leído por la librería de imágenes
                     val bytes = Base64.decode(formState.fotografiaBase64, Base64.DEFAULT)
+
+                    // Componente de Coil que dibuja la imagen usando los bytes decodificados, ocupando todo el espacio de la caja
                     AsyncImage(
                         model = bytes,
                         contentDescription = "Foto inquilino",
@@ -242,26 +257,37 @@ fun RegistrarInquilinoScreen(
                         contentScale = ContentScale.Crop
                     )
                 } else {
+                    // Si NO hay foto, mostramos un texto de aviso dentro de la caja de previsualización
                     Text(
                         text = "Sin foto",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
+            } // Cierre del contenedor visual de la foto
+
+            // Columna que organiza los botones de acción al lado o debajo de la foto
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                // Botón principal para abrir la galería del celular
                 Button(
                     onClick = {
+                        // Lanzamos el selector nativo de Android filtrando únicamente por archivos de imagen
                         selectorFotoLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     }
                 ) {
+                    // Texto dinámico: si no hay foto dice "Elegir foto", si ya hay una dice "Cambiar foto"
                     Text(if (formState.fotografiaBase64 == null) "Elegir foto" else "Cambiar foto")
                 }
 
+                // Botón secundario condicional: solo aparece si ya se había seleccionado una foto
                 if (formState.fotografiaBase64 != null) {
-                    TextButton(onClick = { formState = formState.copy(fotografiaBase64 = null) }) {
+                    TextButton(onClick = {
+                        // Al hacer clic, borramos la foto del estado asignándole un valor nulo
+                        formState = formState.copy(fotografiaBase64 = null)
+                    }) {
                         Text("Quitar foto", color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -309,30 +335,40 @@ fun EditarInquilinoScreen(
     onGuardar: (Inquilino) -> Unit,
     onCancelar: () -> Unit
 ) {
+    // Obtiene el contexto actual de Android necesario para acceder a recursos y funciones del sistema
     val context = LocalContext.current
 
-    // Inicializamos el estado del formulario con los datos existentes del inquilino
+// Inicializamos el estado del formulario PRECARGANDO los datos del inquilino existente que se va a editar
     var formState by remember {
         mutableStateOf(
             InquilinoFormState(
                 nombre = inquilino.nombre,
                 dni = inquilino.dni,
+                // Si la edad es mayor a 0, la convertimos a texto; si no, dejamos el campo vacío
                 edad = if (inquilino.edad > 0) inquilino.edad.toString() else "",
                 sexo = inquilino.sexo,
                 telefono = inquilino.telefono,
+                // Si el sueldo es mayor a 0, lo convertimos a texto; si no, vacío
                 sueldo = if (inquilino.sueldo > 0.0) inquilino.sueldo.toString() else "",
+                // Precargamos la fotografía en Base64 que el inquilino ya tenía guardada en la base de datos
                 fotografiaBase64 = inquilino.fotografia
             )
         )
     }
-
+    //uri: direccion donde se encuentra el archivo o foto en el dispositivo
+// Estado booleano para controlar si el menú desplegable (Dropdown) del sexo está abierto o cerrado
     var sexoExpandido by remember { mutableStateOf(false) }
 
+// En este bloque, consiste en que se va seleccionar una nueva foto accediendo a la galeria del sistema
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
+        // Si el usuario selecciona una imagen de su galería
         if (uri != null) {
+            // Comprimimos y convertimos la nueva imagen a formato Base64 usando nuestra función auxiliar
             val fotoComprimida = uriABase64(context, uri)
+
+            // Actualizamos el estado del formulario con la nueva foto seleccionada
             formState = formState.copy(fotografiaBase64 = fotoComprimida)
         }
     }
@@ -532,7 +568,7 @@ fun InquilinoScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
+    //efecto que obtiene la lista de inquilinos mediante vm
     LaunchedEffect(Unit) {
         viewModel.obtenerTodos()
     }
@@ -737,13 +773,22 @@ fun InquilinoScreen(
                 } else if (uiState.inquilinos.isEmpty()) {
                     Text("No hay inquilinos registrados.")
                 } else {
+                    // Contenedor optimizado para listas (equivalente al RecyclerView antiguo);
+                    // solo renderiza en pantalla los elementos visibles para ahorrar memoria.
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp) // Deja un espacio de 8 píxeles entre cada tarjeta de la lista
                     ) {
+                        // Recorre la lista de inquilinos que viene del estado de la UI (uiState)
                         items(uiState.inquilinos) { inquilino ->
+
+                            // Componente visual personalizado que dibuja los datos de cada inquilino en pantalla
                             InquilinoCard(
                                 inquilino = inquilino,
+
+                                // Callback: Si el usuario presiona el botón "Modificar", avisa al ViewModel enviándole el inquilino (it)
                                 onModificar = { viewModel.seleccionarInquilinoParaEditar(it) },
+
+                                // Callback: Si el usuario presiona "Dar de baja", avisa al ViewModel enviándole el inquilino (it)
                                 onDarDeBaja = { viewModel.seleccionarInquilinoParaBaja(it) }
                             )
                         }
@@ -771,22 +816,36 @@ fun InquilinoCard(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Verificamos si el inquilino tiene una foto registrada (que no sea nula ni esté vacía)
             if (!inquilino.fotografia.isNullOrBlank()) {
+
+                // Decodificamos el texto Base64 a un arreglo de bytes.
+                // Usamos 'remember' para que la decodificación solo se haga cuando la foto cambie, optimizando el rendimiento.
                 val bytes = remember(inquilino.fotografia) { Base64.decode(inquilino.fotografia, Base64.DEFAULT) }
+
+                // Componente de Coil para cargar imágenes; en este caso recibe los bytes decodificados,
+                // los recorta en forma circular de 50x50 dp y ajusta la escala (Crop).
                 AsyncImage(
-                    model = bytes, contentDescription = null,
+                    model = bytes,
+                    contentDescription = null,
                     modifier = Modifier.size(50.dp).clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
             } else {
+                // Si NO tiene foto, mostramos un avatar por defecto con sus iniciales
                 Box(
-                    modifier = Modifier.size(50.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)), // Fondo circular semitransparente
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
+                        // Extrae la primera letra del nombre, la pasa a mayúsculas;
+                        // si el nombre está vacío, usa el operador Elvis '?:' para poner un signo "?"
                         text = inquilino.nombre.firstOrNull()?.uppercase() ?: "?",
                         color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.titleMedium // Aplicando estilo del Theme
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
             }

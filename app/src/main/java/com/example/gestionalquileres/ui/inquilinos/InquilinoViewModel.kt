@@ -56,22 +56,29 @@ class InquilinoViewModel @Inject constructor(
 
             repository.buscarPorDniCualquiera(inquilino.dni)
                 .onSuccess { inquilinoExistente ->
+                    // Evaluamos si se encontró un inquilino con ese DNI en la base de datos
                     if (inquilinoExistente != null) {
+                        // Apagamos el indicador de carga
                         _uiState.value = _uiState.value.copy(isLoading = false)
 
+                        // Evaluamos si el inquilino encontrado está INACTIVO (!active)
                         if (!inquilinoExistente.active) {
+                            // Preparamos el objeto para reactivarlo, heredando el ID antiguo que ya tenía en la base de datos
                             val inquilinoParaReactivar = inquilino.copy(
                                 idInquilino = inquilinoExistente.idInquilino
                             )
+                            // Guardamos en el estado que se detectó un inquilino inactivo (para mostrar una alerta de confirmación en la UI)
                             _uiState.value = _uiState.value.copy(
                                 inquilinoInactivoDetectado = inquilinoParaReactivar
                             )
                         } else {
+                            // Si el inquilino YA está activo, bloqueamos el registro y mostramos un error de DNI duplicado
                             _uiState.value = _uiState.value.copy(
                                 errorMessage = "Ya existe un inquilino activo con el DNI ${inquilino.dni}."
                             )
                         }
                     } else {
+                        // Si NO se encontró ningún registro con ese DNI, procedemos a crear un registro totalmente nuevo
                         ejecutarRegistroNuevo(inquilino)
                     }
                 }
@@ -85,24 +92,34 @@ class InquilinoViewModel @Inject constructor(
     }
 
     fun obtenerTodos() {
+        // 1. Lanzamos una corrutina en segundo plano desde el ViewModel
         viewModelScope.launch {
+
+            // 2. Ponemos la app en modo carga antes de ir por los datos a la nube
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
                 errorMessage = null
             )
 
+            // 3. Llamamos al repositorio, el cual nos devuelve un contenedor 'AppResult'
+            //    (que por dentro trae o un 'Exito' con la lista o un 'Error' con la excepción).
             repository.obtenerTodos()
+
+                // 4. .onSuccess SE CONECTA con el AppResult.Exito:
+                //    Si Firebase respondió bien, este bloque se activa y recibe la 'lista'.
                 .onSuccess { lista ->
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        inquilinos = lista
+                        isLoading = false,          // Apagamos el indicador de carga
+                        inquilinos = lista          // Guardamos los datos en el estado de la UI
                     )
                 }
+
+                // 5. .onFailure SE CONECTA con el AppResult.Error:
+                //    Si hubo un fallo de red o Firestore rechazó la petición, se activa este bloque.
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudieron obtener los inquilinos."
+                        isLoading = false,          // Apagamos la carga para no dejar la pantalla trabada
+                        errorMessage = error.message ?: "No se pudieron obtener los inquilinos." // Guardamos el error
                     )
                 }
         }
@@ -150,27 +167,34 @@ class InquilinoViewModel @Inject constructor(
     }
 
     fun actualizar(inquilino: Inquilino) {
+        // Lanzamos una corrutina asociada al ciclo de vida del ViewModel para ejecutar tareas asíncronas en segundo plano
         viewModelScope.launch {
+            // actualizamos el estado de ui y activamos el indicador de carga
             _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null,
-                successMessage = null
+                isLoading = true,           // Enciende el indicador de carga (spinner) y bloquea la interfaz
+                errorMessage = null,        // Borra cualquier error anterior
+                successMessage = null       // Borra cualquier mensaje de éxito anterior
             )
-
+            // Llamamos al repositorio para actualizar los datos del inquilino en Firebase
             repository.actualizar(inquilino)
+
+                // Si la actualización en la nube se ejecuta correctamente
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        successMessage = "Datos del inquilino actualizados correctamente.",
-                        inquilinoSeleccionado = null // Cierra la ventana de edición al terminar
+                        isLoading = false,                  // Apagamos la carga
+                        successMessage = "Datos del inquilino actualizados correctamente.", // Mensaje de confirmación
+                        inquilinoSeleccionado = null        // Limpiamos el inquilino seleccionado para cerrar la ventana/modal de edición
                     )
+                    // Volvemos a consultar la lista completa para que la interfaz se refresque con los datos nuevos
                     obtenerTodos()
                 }
+
+                // Si ocurre un fallo de red o de Firestore durante la actualización
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo actualizar el inquilino."
+                        isLoading = false,                  // Apagamos la carga para no dejar la pantalla bloqueada
+                        errorMessage = error.message        // Guardamos el mensaje original del error
+                            ?: "No se pudo actualizar el inquilino." // O usamos un texto por defecto con el operador Elvis si viene nulo
                     )
                 }
         }
@@ -205,30 +229,37 @@ class InquilinoViewModel @Inject constructor(
 
     private suspend fun ejecutarRegistroNuevo(inquilino: Inquilino) {
         repository.registrar(inquilino)
+            // Si el registro en Firebase sale bien, recibimos el objeto ya creado con su ID
             .onSuccess { nuevoInquilino ->
+
+                // Creamos una nueva lista sumando la lista actual más el nuevo inquilino registrado (aplicando inmutabilidad en Compose)
                 val listaActualizada = _uiState.value.inquilinos + nuevoInquilino
+
+                // Actualizamos el estado de la UI con los nuevos cambios
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    inquilinos = listaActualizada,
-                    successMessage = "Inquilino registrado correctamente.",
-                    mostrandoFormularioRegistro = false // Cierra el formulario automáticamente
+                    isLoading = false,                      // Apagamos el indicador de carga
+                    inquilinos = listaActualizada,          // Actualizamos la lista visible añadiendo el inquilino recién creado
+                    successMessage = "Inquilino registrado correctamente.", // Mensaje de éxito para el usuario
+                    mostrandoFormularioRegistro = false     // Cierra el formulario automáticamente tras el registro exitoso
                 )
             }
             .onFailure { error ->
+                // Actualizamos el estado para reflejar el fallo en la interfaz
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = error.message ?: "No se pudo registrar el inquilino."
+                    isLoading = false,                      // Apagamos la carga para no dejar la pantalla bloqueada
+                    errorMessage = error.message ?: "No se pudo registrar el inquilino." // Mensaje de error por defecto usando el operador Elvis
                 )
             }
     }
 
     fun reactivarInquilino(inquilino: Inquilino) {
         viewModelScope.launch {
+            // Actualizamos el estado de la UI con los cambios en modo de carga
             _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null,
-                successMessage = null,
-                inquilinoInactivoDetectado = null
+                isLoading = true,                    // Activamos el indicador de carga (spinner) y bloqueamos acciones repetidas
+                errorMessage = null,                 // Limpiamos cualquier error previo para que la pantalla quede "limpia"
+                successMessage = null,               // Limpiamos mensajes de éxito anteriores para que no se queden estáticos
+                inquilinoInactivoDetectado = null    // Reseteamos el estado de inactividad para cerrar o evitar diálogos pendientes
             )
 
             repository.reactivarYActualizar(inquilino)
