@@ -48,8 +48,8 @@ fun ReciboScreen(
             RegistrarReciboScreen(
                 uiState = uiState,
                 onCargarContratos = { viewModel.cargarContratosParaCobro() },
-                onGuardar = { contrato, agua, luz, ipc ->
-                    viewModel.generarRecibo(contrato, agua, luz, ipc)
+                onGuardar = { contrato, agua, luz, mantenimiento ->
+                    viewModel.generarRecibo(contrato, agua, luz, mantenimiento)
                 },
                 onCancelar = { viewModel.mostrarFormularioRegistro(false) }
             )
@@ -79,7 +79,7 @@ fun ReciboScreen(
                         Text(
                             text = "Gestión de Recibos",
                             style = MaterialTheme.typography.headlineMedium,
-                            maxLines = 2 // <--- Permite que baje a la segunda línea si no entra horizontalmente
+                            maxLines = 2 // Permite que baje a la segunda línea si no entra horizontalmente
                         )
                     }
 
@@ -193,7 +193,7 @@ fun RegistrarReciboScreen(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    // ¡Un solo estado agrupado en lugar de 4 variables sueltas!
+    // Estado agrupado del formulario
     var formState by remember { mutableStateOf(ReciboFormState()) }
 
     LaunchedEffect(Unit) {
@@ -275,9 +275,9 @@ fun RegistrarReciboScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = formState.ipc,
-            onValueChange = { formState = formState.copy(ipc = it) },
-            label = { Text("IPC (Ajuste)") },
+            value = formState.mantenimiento,
+            onValueChange = { formState = formState.copy(mantenimiento = it) },
+            label = { Text("Mantenimiento") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
@@ -300,7 +300,7 @@ fun RegistrarReciboScreen(
             Button(
                 onClick = {
                     formState.contratoSeleccionado?.let { contrato ->
-                        onGuardar(contrato, formState.agua, formState.luz, formState.ipc)
+                        onGuardar(contrato, formState.agua, formState.luz, formState.mantenimiento)
                     }
                 },
                 enabled = formState.contratoSeleccionado != null && !uiState.isLoading,
@@ -349,7 +349,7 @@ fun ReciboCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            // Usamos la función inteligente del modelo para mostrar solo los conceptos válidos
+            // Muestra solo los conceptos válidos
             recibo.obtenerConceptosCobrar().forEach { concepto ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
