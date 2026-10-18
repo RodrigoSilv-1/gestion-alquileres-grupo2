@@ -77,6 +77,11 @@ import com.example.gestionalquileres.ui.contrato.ContratoViewModel
 import com.example.gestionalquileres.ui.recibos.ReciboScreen
 import com.example.gestionalquileres.ui.recibos.ReciboViewModel
 import androidx.compose.material3.Surface
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.VisualTransformation
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -156,6 +161,9 @@ fun LoginScreen(
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var passwordVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     LaunchedEffect(uiState.errorMessage) {
         if (uiState.errorMessage != null) {
@@ -211,7 +219,16 @@ fun LoginScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Correo electrónico", style = MaterialTheme.typography.bodyLarge) },
+                label = {
+                    Text(
+                        text = "Correo electrónico",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .background(Color.White)
+                            .padding(horizontal = 4.dp)
+                    )
+                },
+                singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -230,8 +247,41 @@ fun LoginScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Contraseña", style = MaterialTheme.typography.bodyLarge) },
-                visualTransformation = PasswordVisualTransformation(),
+                label = {
+                    Text(
+                        text = "Contraseña",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .background(Color.White)
+                            .padding(horizontal = 4.dp)
+                    )
+                },
+                singleLine = true,
+                visualTransformation = if (passwordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            passwordVisible = !passwordVisible
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (passwordVisible) {
+                                Icons.Default.VisibilityOff
+                            } else {
+                                Icons.Default.Visibility
+                            },
+                            contentDescription = if (passwordVisible) {
+                                "Ocultar contraseña"
+                            } else {
+                                "Mostrar contraseña"
+                            }
+                        )
+                    }
+                },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyLarge,
@@ -258,7 +308,7 @@ fun LoginScreen(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-
+//BOTON ... .. . . .. . . .
             Button(
                 onClick = { onLogin(email, password) },
                 modifier = Modifier.fillMaxWidth(),
@@ -302,6 +352,12 @@ fun RegisterScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var selectedRole by rememberSaveable { mutableStateOf(UserRole.SECRETARIO.name) }
+    var passwordVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var confirmPasswordVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     LaunchedEffect(uiState.errorMessage) {
         if (uiState.errorMessage != null) {
@@ -349,7 +405,16 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Correo electrónico", style = MaterialTheme.typography.bodyLarge) },
+                label = {
+                    Text(
+                        text = "Correo electrónico",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .background(Color.White)
+                            .padding(horizontal = 4.dp)
+                    )
+                },
+                singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyLarge,
@@ -370,8 +435,41 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Contraseña mínimo 6 caracteres", style = MaterialTheme.typography.bodyLarge) },
-                visualTransformation = PasswordVisualTransformation(),
+                label = {
+                    Text(
+                        text = "Contraseña",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .background(Color.White)
+                            .padding(horizontal = 4.dp)
+                    )
+                },
+                singleLine = true,
+                visualTransformation = if (passwordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            passwordVisible = !passwordVisible
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (passwordVisible) {
+                                Icons.Default.VisibilityOff
+                            } else {
+                                Icons.Default.Visibility
+                            },
+                            contentDescription = if (passwordVisible) {
+                                "Ocultar contraseña"
+                            } else {
+                                "Mostrar contraseña"
+                            }
+                        )
+                    }
+                },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyLarge,
@@ -392,8 +490,41 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirmar contraseña", style = MaterialTheme.typography.bodyLarge) },
-                visualTransformation = PasswordVisualTransformation(),
+                label = {
+                    Text(
+                        text = "Confirmar contraseña",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .background(Color.White)
+                            .padding(horizontal = 4.dp)
+                    )
+                },
+                singleLine = true,
+                visualTransformation = if (confirmPasswordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            confirmPasswordVisible = !confirmPasswordVisible
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (confirmPasswordVisible) {
+                                Icons.Default.VisibilityOff
+                            } else {
+                                Icons.Default.Visibility
+                            },
+                            contentDescription = if (confirmPasswordVisible) {
+                                "Ocultar confirmación de contraseña"
+                            } else {
+                                "Mostrar confirmación de contraseña"
+                            }
+                        )
+                    }
+                },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyLarge,
@@ -455,7 +586,7 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // BOTÓN REGISTRAR
+            // BOTON REGISTRAR
             Button(
                 onClick = {
                     onRegister(email, password, confirmPassword, UserRole.valueOf(selectedRole))

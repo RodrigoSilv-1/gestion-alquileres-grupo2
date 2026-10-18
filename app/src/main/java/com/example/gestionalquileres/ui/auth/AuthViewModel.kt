@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.example.gestionalquileres.domain.model.UserRole
+import android.util.Patterns
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -54,20 +55,34 @@ class AuthViewModel @Inject constructor(
     }
 
     fun login(email: String, password: String) {
+        val emailLimpio = email.trim()
+
         when {
-            email.trim().isEmpty() -> showError("Ingresa tu correo.")
-            password.isEmpty() -> showError("Ingresa tu contraseña.")
+            emailLimpio.isEmpty() -> {
+                showError("Ingresa tu correo.")
+            }
+
+            !Patterns.EMAIL_ADDRESS.matcher(emailLimpio).matches() -> {
+                showError("Ingresa un correo electrónico válido.")
+            }
+
+            password.isEmpty() -> {
+                showError("Ingresa tu contraseña.")
+            }
+
             else -> {
                 viewModelScope.launch {
                     _uiState.value = AuthUiState(isLoading = true)
 
-                    repository.login(email.trim(), password)
+                    repository.login(emailLimpio, password)
                         .onSuccess { user ->
-                            _uiState.value = AuthUiState(currentUser = user)
-                        }
-                        .onFailure { error ->
                             _uiState.value = AuthUiState(
-                                errorMessage = error.message ?: "Correo o contraseña incorrectos."
+                                currentUser = user
+                            )
+                        }
+                        .onFailure {
+                            _uiState.value = AuthUiState(
+                                errorMessage = "Credenciales inválidas. Verifica tu correo y contraseña."
                             )
                         }
                 }

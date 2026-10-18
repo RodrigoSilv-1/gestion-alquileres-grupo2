@@ -4,20 +4,54 @@ import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.Recibo
 
 data class ReciboUiState(
-    // Estados generales
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
 
-    // Datos principales
-    val recibos: List<Recibo> = emptyList(), // Historial de recibos generados
-    val contratosActivos: List<Contrato> = emptyList(), // Para el dropdown de "A quién cobrar"
+    val recibos: List<Recibo> = emptyList(),
+    val contratosActivos: List<Contrato> = emptyList(),
 
-    // Controles de navegación y formularios
     val mostrandoFormularioRegistro: Boolean = false,
     val reciboSeleccionado: Recibo? = null,
 
-    // Búsqueda y filtros (Estándar de tu app)
-    val tipoBusqueda: String = "Número", // Puede ser "Número" o "Contrato"
-    val textoBusqueda: String = ""
-)
+    val tipoBusqueda: String = "Número",
+    val textoBusqueda: String = "",
+
+    val filtroEstado: String = FILTRO_TODOS
+) {
+    companion object {
+        const val FILTRO_TODOS = "Todos"
+        const val FILTRO_PENDIENTES = "Pendientes"
+        const val FILTRO_COBRADOS = "Cobrados"
+    }
+
+    val recibosFiltrados: List<Recibo>
+        get() {
+            val texto = textoBusqueda.trim()
+
+            return recibos.filter { recibo ->
+                val coincideEstado = when (filtroEstado) {
+                    FILTRO_PENDIENTES ->
+                        recibo.estadoPago == Recibo.ESTADO_PENDIENTE
+
+                    FILTRO_COBRADOS ->
+                        recibo.estadoPago == Recibo.ESTADO_COBRADO
+
+                    else -> true
+                }
+
+                val coincideBusqueda =
+                    texto.isBlank() ||
+                            recibo.numeroUnico.contains(
+                                other = texto,
+                                ignoreCase = true
+                            ) ||
+                            recibo.idContrato.contains(
+                                other = texto,
+                                ignoreCase = true
+                            )
+
+                coincideEstado && coincideBusqueda
+            }
+        }
+}

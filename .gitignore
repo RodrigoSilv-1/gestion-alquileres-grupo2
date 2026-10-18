@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Archivos temporales generados por Kotlin y la JVM
+.kotlin/
+hs_err_pid*.log
+replay_pid*.log

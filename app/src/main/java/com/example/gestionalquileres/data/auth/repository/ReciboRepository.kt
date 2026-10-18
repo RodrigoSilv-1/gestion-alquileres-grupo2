@@ -74,4 +74,28 @@ class ReciboRepository @Inject constructor(
             AppResult.Error(e)
         }
     }
+    suspend fun actualizarEstadoPago(
+        idRecibo: String,
+        nuevoEstado: String
+    ): AppResult<Unit> {
+        if (
+            nuevoEstado != Recibo.ESTADO_PENDIENTE &&
+            nuevoEstado != Recibo.ESTADO_COBRADO
+        ) {
+            return AppResult.Error(
+                IllegalArgumentException("El estado del recibo no es válido.")
+            )
+        }
+
+        return try {
+            recibosCollection
+                .document(idRecibo)
+                .update("estadoPago", nuevoEstado)
+                .await()
+
+            AppResult.Exito(Unit)
+        } catch (e: Exception) {
+            AppResult.Error(e)
+        }
+    }
 }
