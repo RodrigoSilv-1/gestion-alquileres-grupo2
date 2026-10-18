@@ -23,7 +23,6 @@ class ReciboViewModel @Inject constructor(
     private val contratoRepository: ContratoRepository // Inyectado para traer los contratos activos
 ) : ViewModel() {
 
-    // (Aquí iría tu StateFlow tradicional, resumido para el ejemplo)
     private val _uiState = MutableStateFlow(ReciboUiState())
     val uiState: StateFlow<ReciboUiState> = _uiState.asStateFlow()
 
@@ -53,22 +52,22 @@ class ReciboViewModel @Inject constructor(
         contratoSeleccionado: Contrato,
         inputAgua: String,
         inputLuz: String,
-        inputIpc: String
+        inputMantenimiento: String
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            // 1. Manejo seguro de campos vacíos (se vuelven 0.0) - Criterio 5
+            // 1. Manejo seguro de campos vacíos (se vuelven 0.0)
             val agua = inputAgua.toDoubleOrNull() ?: 0.0
             val luz = inputLuz.toDoubleOrNull() ?: 0.0
-            val ipc = inputIpc.toDoubleOrNull() ?: 0.0
+            val mantenimiento = inputMantenimiento.toDoubleOrNull() ?: 0.0
             val renta = contratoSeleccionado.precioRentaAcordado
 
-            // 2. Cálculos (Criterio 4)
+            // 2. Cálculos
             val igv = renta * 0.18
-            val total = renta + igv + agua + luz + ipc
+            val total = renta + igv + agua + luz + mantenimiento
 
-            // 3. Capturar fecha del sistema (Criterio 3)
+            // 3. Capturar fecha del sistema
             val formatoFecha = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val fechaHoy = formatoFecha.format(Date())
 
@@ -84,7 +83,7 @@ class ReciboViewModel @Inject constructor(
                 montoIgv = igv,
                 agua = agua,
                 luz = luz,
-                ipc = ipc,
+                mantenimiento = mantenimiento,
                 montoTotal = total,
                 estadoPago = Recibo.ESTADO_PENDIENTE
             )
@@ -116,7 +115,7 @@ class ReciboViewModel @Inject constructor(
                 is AppResult.Exito -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        recibos = resultado.valor // Recuerda cambiar "data" si tu AppResult usa otro nombre
+                        recibos = resultado.valor
                     )
                 }
                 is AppResult.Error -> {
@@ -128,6 +127,7 @@ class ReciboViewModel @Inject constructor(
             }
         }
     }
+
     fun cambiarEstadoPago(recibo: Recibo) {
         val nuevoEstado =
             if (recibo.estadoPago == Recibo.ESTADO_COBRADO) {
@@ -175,6 +175,7 @@ class ReciboViewModel @Inject constructor(
             }
         }
     }
+
     // --- FUNCIONES DE ESTADO DE LA INTERFAZ (UI STATE) ---
 
     fun mostrarFormularioRegistro(mostrar: Boolean) {
@@ -192,6 +193,7 @@ class ReciboViewModel @Inject constructor(
     fun actualizarTextoBusqueda(texto: String) {
         _uiState.value = _uiState.value.copy(textoBusqueda = texto)
     }
+
     fun actualizarFiltroEstado(filtro: String) {
         val filtrosPermitidos = setOf(
             ReciboUiState.FILTRO_TODOS,
@@ -205,6 +207,7 @@ class ReciboViewModel @Inject constructor(
             )
         }
     }
+
     fun limpiarMensajes() {
         _uiState.value = _uiState.value.copy(
             errorMessage = null,
