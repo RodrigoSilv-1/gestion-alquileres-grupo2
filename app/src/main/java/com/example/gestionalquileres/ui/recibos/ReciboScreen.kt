@@ -19,6 +19,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.Recibo
+import androidx.compose.ui.platform.LocalContext
+import com.example.gestionalquileres.util.ReciboPdfAcciones
 
 @Composable
 fun ReciboScreen(
@@ -27,6 +29,7 @@ fun ReciboScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.cargarHistorialRecibos()
@@ -110,18 +113,68 @@ fun ReciboScreen(
                     ),
                     singleLine = true
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val filtros = listOf(
+                        ReciboUiState.FILTRO_TODOS,
+                        ReciboUiState.FILTRO_PENDIENTES,
+                        ReciboUiState.FILTRO_COBRADOS
+                    )
+
+                    filtros.forEach { filtro ->
+                        FilterChip(
+                            selected = uiState.filtroEstado == filtro,
+                            onClick = {
+                                viewModel.actualizarFiltroEstado(filtro)
+                            },
+                            label = {
+                                Text(filtro)
+                            }
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Lista de Recibos
                 if (uiState.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                } else if (uiState.recibos.isEmpty()) {
-                    Text("No hay recibos generados aún.")
+                } else if (uiState.recibosFiltrados.isEmpty()) {
+                    Text(
+                        text = if (uiState.recibos.isEmpty()) {
+                            "No hay recibos generados aún."
+                        } else {
+                            "No hay recibos que coincidan con el filtro."
+                        }
+                    )
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(uiState.recibos) { recibo ->
-                            ReciboCard(recibo = recibo)
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(
+                            items = uiState.recibosFiltrados,
+                            key = { recibo -> recibo.idRecibo }
+                        ) { recibo ->
+                            ReciboCard(
+                                recibo = recibo,
+                                onCambiarEstado = {
+                                    viewModel.cambiarEstadoPago(recibo)
+                                },
+                                onVerPdf = {
+                                    ReciboPdfAcciones.visualizar(
+                                        context = context,
+                                        recibo = recibo
+                                    )
+                                },
+                                onCompartirPdf = {
+                                    ReciboPdfAcciones.compartir(
+                                        context = context,
+                                        recibo = recibo
+                                    )
+                                }
+                            )
                         }
                     }
                 }
@@ -264,7 +317,12 @@ fun RegistrarReciboScreen(
 }
 
 @Composable
-fun ReciboCard(recibo: Recibo) {
+fun ReciboCard(
+    recibo: Recibo,
+    onCambiarEstado: () -> Unit,
+    onVerPdf: () -> Unit,
+    onCompartirPdf: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -276,7 +334,15 @@ fun ReciboCard(recibo: Recibo) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = recibo.numeroUnico, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                Text(text = recibo.estadoPago, color = if (recibo.estadoPago == "Pagado") Color(0xFF4CAF50) else Color(0xFFF44336))
+                Text(
+                    text = recibo.estadoPago,
+                    color = if (recibo.estadoPago == Recibo.ESTADO_COBRADO) {
+                        Color(0xFF4CAF50)
+                    } else {
+                        Color(0xFFF44336)
+                    },
+                    fontWeight = FontWeight.Bold
+                )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Fecha Emisión: ${recibo.fechaEmision}", style = MaterialTheme.typography.bodyMedium)
@@ -302,6 +368,40 @@ fun ReciboCard(recibo: Recibo) {
             ) {
                 Text(text = "Total a Pagar:", fontWeight = FontWeight.Bold)
                 Text(text = "S/ ${recibo.montoTotal}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onCambiarEstado,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = if (recibo.estadoPago == Recibo.ESTADO_COBRADO) {
+                        "Volver a pendiente"
+                    } else {
+                        "Marcar como cobrado"
+                    }
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onVerPdf,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Ver PDF")
+                }
+
+                OutlinedButton(
+                    onClick = onCompartirPdf,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Compartir")
+                }
             }
         }
     }

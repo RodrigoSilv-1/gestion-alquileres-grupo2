@@ -74,6 +74,11 @@ class ReciboViewModel @Inject constructor(
 
             val reciboParcial = Recibo(
                 idContrato = contratoSeleccionado.idContrato,
+                nombreInquilino = contratoSeleccionado.nombreInquilino,
+                dniInquilino = contratoSeleccionado.dniInquilino,
+                direccionInmueble = contratoSeleccionado.direccionInmueble,
+                distritoInmueble = contratoSeleccionado.distritoInmueble,
+                nombreUnidad = contratoSeleccionado.nombreUnidad,
                 fechaEmision = fechaHoy,
                 rentaBase = renta,
                 montoIgv = igv,
@@ -81,7 +86,7 @@ class ReciboViewModel @Inject constructor(
                 luz = luz,
                 ipc = ipc,
                 montoTotal = total,
-                estadoPago = "Pendiente"
+                estadoPago = Recibo.ESTADO_PENDIENTE
             )
 
             // 4. Delegar al repositorio para crear el correlativo y guardar
@@ -89,6 +94,7 @@ class ReciboViewModel @Inject constructor(
                 is AppResult.Exito -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        recibos = listOf(resultado.valor) + _uiState.value.recibos,
                         successMessage = "Recibo ${resultado.valor.numeroUnico} generado correctamente."
                     )
                 }
@@ -122,7 +128,53 @@ class ReciboViewModel @Inject constructor(
             }
         }
     }
+    fun cambiarEstadoPago(recibo: Recibo) {
+        val nuevoEstado =
+            if (recibo.estadoPago == Recibo.ESTADO_COBRADO) {
+                Recibo.ESTADO_PENDIENTE
+            } else {
+                Recibo.ESTADO_COBRADO
+            }
 
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null,
+                successMessage = null
+            )
+
+            when (
+                val resultado = reciboRepository.actualizarEstadoPago(
+                    idRecibo = recibo.idRecibo,
+                    nuevoEstado = nuevoEstado
+                )
+            ) {
+                is AppResult.Exito -> {
+                    val recibosActualizados = _uiState.value.recibos.map { actual ->
+                        if (actual.idRecibo == recibo.idRecibo) {
+                            actual.copy(estadoPago = nuevoEstado)
+                        } else {
+                            actual
+                        }
+                    }
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        recibos = recibosActualizados,
+                        successMessage = "Recibo marcado como $nuevoEstado."
+                    )
+                }
+
+                is AppResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = resultado.excepcion.message
+                            ?: "No se pudo actualizar el estado del recibo."
+                    )
+                }
+            }
+        }
+    }
     // --- FUNCIONES DE ESTADO DE LA INTERFAZ (UI STATE) ---
 
     fun mostrarFormularioRegistro(mostrar: Boolean) {
@@ -140,7 +192,19 @@ class ReciboViewModel @Inject constructor(
     fun actualizarTextoBusqueda(texto: String) {
         _uiState.value = _uiState.value.copy(textoBusqueda = texto)
     }
+    fun actualizarFiltroEstado(filtro: String) {
+        val filtrosPermitidos = setOf(
+            ReciboUiState.FILTRO_TODOS,
+            ReciboUiState.FILTRO_PENDIENTES,
+            ReciboUiState.FILTRO_COBRADOS
+        )
 
+        if (filtro in filtrosPermitidos) {
+            _uiState.value = _uiState.value.copy(
+                filtroEstado = filtro
+            )
+        }
+    }
     fun limpiarMensajes() {
         _uiState.value = _uiState.value.copy(
             errorMessage = null,

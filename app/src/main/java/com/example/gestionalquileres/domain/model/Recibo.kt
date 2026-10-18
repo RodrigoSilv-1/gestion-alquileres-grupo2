@@ -2,6 +2,11 @@ package com.example.gestionalquileres.domain.model
 
 data class Recibo(
     val idRecibo: String = "",
+    val nombreInquilino: String = "",
+    val dniInquilino: String = "",
+    val direccionInmueble: String = "",
+    val distritoInmueble: String = "",
+    val nombreUnidad: String = "",
     val numeroUnico: String = "",
     val idContrato: String = "",
     val fechaEmision: String = "",
@@ -11,8 +16,12 @@ data class Recibo(
     val luz: Double = 0.0,
     val ipc: Double = 0.0,
     val montoTotal: Double = 0.0,
-    val estadoPago: String = "Pendiente"
+    val estadoPago: String = ESTADO_PENDIENTE
 ) {
+    companion object {
+        const val ESTADO_PENDIENTE = "Pendiente"
+        const val ESTADO_COBRADO = "Cobrado"
+    }
     // CRITERIO 6: Generar una lista solo con los conceptos válidos (> 0) para la UI
     fun obtenerConceptosCobrar(): List<Pair<String, Double>> {
         val conceptos = mutableListOf<Pair<String, Double>>()
