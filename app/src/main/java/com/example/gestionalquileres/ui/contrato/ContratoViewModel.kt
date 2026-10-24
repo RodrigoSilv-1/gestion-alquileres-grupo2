@@ -12,6 +12,7 @@ import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.time.LocalDate
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -37,7 +38,6 @@ class ContratoViewModel @Inject constructor(
             val inmueblesResult = inmuebleRepository.obtenerTodos()
 
             if (contratosResult is AppResult.Exito && inquilinosResult is AppResult.Exito && inmueblesResult is AppResult.Exito) {
-                // NOTA: Si tu clase AppResult usa una variable distinta a "data" (como "datos" o "valor"), cámbiala aquí
                 val inmuebles = inmueblesResult.valor
                 val unidadesDisponiblesList = mutableListOf<Pair<Inmueble, UnidadAlquilable>>()
                 val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
@@ -147,53 +147,23 @@ class ContratoViewModel @Inject constructor(
             return
         }
 
-        try {
-            val partesInicio = estado.fechaInicio.split("-")
-            val partesFin = estado.fechaFin.split("-")
+        val inicio = runCatching { LocalDate.parse(estado.fechaInicio) }.getOrNull()
+        val fin = runCatching { LocalDate.parse(estado.fechaFin) }.getOrNull()
 
-            if (partesInicio.size == 3 && partesFin.size == 3) {
-                val anioInicio = partesInicio[0].toInt()
-                val mesInicio = partesInicio[1].toInt()
-                val diaInicio = partesInicio[2].toInt()
-
-                val anioFin = partesFin[0].toInt()
-                val mesFin = partesFin[1].toInt()
-                val diaFin = partesFin[2].toInt()
-
-                val fechaActualCalendar = java.util.Calendar.getInstance()
-                val calInicio = java.util.Calendar.getInstance().apply {
-                    set(anioInicio, mesInicio - 1, diaInicio)
-                }
-
-                fechaActualCalendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
-                fechaActualCalendar.set(java.util.Calendar.MINUTE, 0)
-                fechaActualCalendar.set(java.util.Calendar.SECOND, 0)
-                fechaActualCalendar.set(java.util.Calendar.MILLISECOND, 0)
-
-                if (calInicio.before(fechaActualCalendar)) {
-                    _uiState.value = estado.copy(errorMessage = "La fecha de inicio no puede ser anterior a la fecha actual.")
-                    return
-                }
-
-                val totalMesesInicio = anioInicio * 12 + mesInicio
-                val totalMesesFin = anioFin * 12 + mesFin
-                val diferenciaMeses = totalMesesFin - totalMesesInicio
-
-                if (diferenciaMeses < 0 || (diferenciaMeses == 0 && diaFin <= diaInicio)) {
-                    _uiState.value = estado.copy(errorMessage = "La fecha de fin debe ser posterior a la fecha de inicio.")
-                    return
-                }
-
-                if (diferenciaMeses < 3 || (diferenciaMeses == 3 && diaFin < diaInicio)) {
-                    _uiState.value = estado.copy(errorMessage = "El contrato debe tener una duración mínima de 3 meses.")
-                    return
-                }
-            } else {
-                _uiState.value = estado.copy(errorMessage = "Formato de fecha inválido. Usa YYYY-MM-DD.")
-                return
-            }
-        } catch (e: Exception) {
-            _uiState.value = estado.copy(errorMessage = "Error al validar las fechas.")
+        if (inicio == null || fin == null) {
+            _uiState.value = estado.copy(errorMessage = "Formato de fecha inválido.")
+            return
+        }
+        if (inicio.isBefore(LocalDate.now())) {
+            _uiState.value = estado.copy(errorMessage = "La fecha de inicio no puede ser anterior a la fecha actual.")
+            return
+        }
+        if (!fin.isAfter(inicio)) {
+            _uiState.value = estado.copy(errorMessage = "La fecha de fin debe ser posterior a la fecha de inicio.")
+            return
+        }
+        if (fin.isBefore(inicio.plusMonths(DURACION_MINIMA_MESES))) {
+            _uiState.value = estado.copy(errorMessage = "El contrato debe tener una duración mínima de $DURACION_MINIMA_MESES meses.")
             return
         }
 

@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.example.gestionalquileres.ui.common.CampoFecha
+import java.time.LocalDate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Contrato
@@ -253,27 +255,41 @@ fun FormularioContrato(
             }
         }
 
-        // Fechas unificadas con el formState
-        OutlinedTextField(
-            value = formState.fechaInicio,
-            onValueChange = { nuevaFecha ->
-                formState = formState.copy(fechaInicio = nuevaFecha)
-                viewModel.actualizarFechas(nuevaFecha, formState.fechaFin)
-            },
-            label = { Text("Fecha de Inicio (Ej. 2026-06-01)") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+        // Fechas con calendario
+        val hoy = remember { LocalDate.now() }
+        val inicio = runCatching { LocalDate.parse(formState.fechaInicio) }.getOrNull()
+
+        CampoFecha(
+            label = "Fecha de inicio",
+            fecha = formState.fechaInicio,
+            fechaMinima = hoy,
+            textoAyuda = "Desde hoy en adelante",
+            onFechaSeleccionada = { nuevoInicio ->
+                val minimoFin = LocalDate.parse(nuevoInicio).plusMonths(DURACION_MINIMA_MESES)
+                // Si el fin ya elegido ya no cumple los 3 meses, se borra
+                val finConservado = runCatching { LocalDate.parse(formState.fechaFin) }
+                    .getOrNull()
+                    ?.takeIf { !it.isBefore(minimoFin) }
+                    ?.toString()
+                    .orEmpty()
+
+                formState = formState.copy(fechaInicio = nuevoInicio, fechaFin = finConservado)
+                viewModel.actualizarFechas(nuevoInicio, finConservado)
+            }
         )
 
-        OutlinedTextField(
-            value = formState.fechaFin,
-            onValueChange = { nuevaFecha ->
-                formState = formState.copy(fechaFin = nuevaFecha)
-                viewModel.actualizarFechas(formState.fechaInicio, nuevaFecha)
-            },
-            label = { Text("Fecha de Fin (Ej. 2027-06-01)") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+        CampoFecha(
+            label = "Fecha de fin",
+            fecha = formState.fechaFin,
+            fechaMinima = inicio?.plusMonths(DURACION_MINIMA_MESES)
+                ?: hoy.plusMonths(DURACION_MINIMA_MESES),
+            habilitado = inicio != null,
+            textoAyuda = if (inicio == null) "Primero elige la fecha de inicio"
+            else "Duración mínima: $DURACION_MINIMA_MESES meses",
+            onFechaSeleccionada = { nuevoFin ->
+                formState = formState.copy(fechaFin = nuevoFin)
+                viewModel.actualizarFechas(formState.fechaInicio, nuevoFin)
+            }
         )
 
         // 3. Resultado de Solvencia
@@ -302,7 +318,9 @@ fun FormularioContrato(
         Button(
             onClick = { viewModel.registrarContrato() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState.esSolvente == true
+            enabled = uiState.esSolvente == true &&
+                    formState.fechaInicio.isNotBlank() &&
+                    formState.fechaFin.isNotBlank()
         ) {
             Text("Firmar y Registrar Contrato")
         }
