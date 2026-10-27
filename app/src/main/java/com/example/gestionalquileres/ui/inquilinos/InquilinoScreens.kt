@@ -66,26 +66,43 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.gestionalquileres.domain.model.Inquilino
 import java.io.ByteArrayOutputStream
 
 fun uriABase64(context: Context, uri: Uri): String? {
     return try {
+    //mediante el contexto va accder a los datos de la imagen a tra ves de la uri
         val inputStream = context.contentResolver.openInputStream(uri)
+
+// 2. Convierte esos datos en un objeto de mapa de bits. Si falla, la función se detiene y retorna nulo
         val bitmapOriginal = BitmapFactory.decodeStream(inputStream) ?: return null
 
+// 3. Define el límite máximo de píxeles de largo de la imagen
         val maxDimension = 400f
+
+// 4. Calcula la proporción de escala comparando el lado más grande de la foto con el límite establecido
         val escala = maxDimension / Math.max(bitmapOriginal.width, bitmapOriginal.height).toFloat()
+
+// 5. Calcula el ancho final: si la foto supera los 400px, se reduce proporcionalmente; si es menor, mantiene su ancho original
         val anchoFinal = if (escala < 1.0f) (bitmapOriginal.width * escala).toInt() else bitmapOriginal.width
+
+// 6. Hace exactamente lo mismo pero para calcular la altura final de la imagen
         val altoFinal = if (escala < 1.0f) (bitmapOriginal.height * escala).toInt() else bitmapOriginal.height
 
+// 7. Crea una nueva versión de la imagen ya redimensionada con las medidas exactas que calculamos
         val bitmapReducido = Bitmap.createScaledBitmap(bitmapOriginal, anchoFinal, altoFinal, true)
+
+// 8. Prepara un contenedor en la memoria RAM para almacenar los bytes de la imagen comprimida
         val outputStream = ByteArrayOutputStream()
+
+// 9. Comprime la imagen en formato JPEG (con un 70% de calidad para reducir su peso considerablemente) y la guarda en el contenedor
         bitmapReducido.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+
+// 10. Extrae todos los datos ya comprimidos en arreglo de bytes
         val bytes = outputStream.toByteArray()
 
+// 11. Convierte esos bytes en un texto plano larguísimo en formato Base64 (ideal para guardarlo en bases de datos como Firestore) sin saltos de línea
         Base64.encodeToString(bytes, Base64.NO_WRAP)
     } catch (e: Exception) {
         e.printStackTrace()
@@ -99,22 +116,28 @@ fun RegistrarInquilinoScreen(
     onGuardar: (Inquilino) -> Unit,
     onCancelar: () -> Unit
 ) {
-    // Obtiene el contexto actual de Android (necesario para acceder a recursos y funciones del sistema como la galería).
+    // Obtiene el contexto actual de Android para acceder a recursos y funciones del sistema (como la galería).
     val context = LocalContext.current
 
-// usamos remenber y mutableStateOf para crear un objeto tipo InquilinoFormState
-    //para avisar a la ui los cambios que se hagan
-    var formState by remember { mutableStateOf(InquilinoFormState()) }
+// 'formState' es la variable que guarda los datos del formulario;
+// 'remember' los mantiene guardados en memoria para que no se borren cuando la pantalla se redibuja;
+// 'mutableStateOf' avisa a la interfaz para que se actualice cada vez que hay un cambio;
+// e 'InquilinoFormState()' crea la instancia inicial con todos los campos (nombre, DNI, etc.) vacíos.
+    var formState by remember {
+        mutableStateOf(InquilinoFormState()) }
 
     // Estado booleano para controlar si el menú desplegable (Dropdown) del sexo está abierto (true) o cerrado (false).
     var sexoExpandido by remember { mutableStateOf(false) }
 
-    // Registra un lanzador para abrir el selector de fotos nativo de Android (Photo Picker).
+    // definimos la variable como selector de imagen
+    //Usas un launcher para interactuar con la galería
     val selectorFotoLauncher = rememberLauncherForActivityResult(
+    //usaremos a la api activityr... para ejecutar la operacion en el sistema
+        //llamando la funcion pickvi para abrir el selector fotos del dispos
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        // Cuando el usuario selecciona una imagen, el sistema nos devuelve su 'uri'
-        if (uri != null) {
+        // Esta función lambda se ejecuta cuando el usuario selecciona un archivo
+        if (uri != null) {//verifica si hay una direccion de foto en el sistema
             // Comprimimos la imagen seleccionada y la convertimos a formato Base64 usando nuestra función auxiliar
             val fotoComprimida = uriABase64(context, uri)
 
@@ -182,14 +205,19 @@ fun RegistrarInquilinoScreen(
         OutlinedTextField(
             value = formState.sueldo,
             onValueChange = { formState = formState.copy(sueldo = it) },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Sueldo Mensual ($)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         // Menú desplegable para el sexo
+        // este box va permitir organizar los el campo y menu des
         Box(modifier = Modifier.fillMaxWidth()) {
+
+            // Campo de texto de solo lectura que muestra el sexo seleccionado
             OutlinedTextField(
                 value = formState.sexo,
                 onValueChange = {},
@@ -199,16 +227,21 @@ fun RegistrarInquilinoScreen(
                 label = { Text("Sexo") },
                 trailingIcon = { Text(if (sexoExpandido) "▲" else "▼") }
             )
+
+            // va super poner al  campo para detectar clics y abrir el menú
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .clickable { sexoExpandido = true }
             )
+
+            // Menú desplegable con las opciones
             DropdownMenu(
                 expanded = sexoExpandido,
                 onDismissRequest = { sexoExpandido = false },
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Opción Masculino
                 DropdownMenuItem(
                     text = { Text("Masculino") },
                     onClick = {
@@ -216,6 +249,8 @@ fun RegistrarInquilinoScreen(
                         sexoExpandido = false
                     }
                 )
+
+                // Opción Femenino
                 DropdownMenuItem(
                     text = { Text("Femenino") },
                     onClick = {
@@ -225,6 +260,7 @@ fun RegistrarInquilinoScreen(
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(text = "Fotografía", style = MaterialTheme.typography.titleMedium)
@@ -293,6 +329,7 @@ fun RegistrarInquilinoScreen(
                 }
             }
         }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -324,7 +361,7 @@ fun RegistrarInquilinoScreen(
                 Text("Guardar")
             }
         }
-    }
+    } // Aquí cierra correctamente la Column principal que envuelve a toda la pantalla
 }
 
 // Pantalla para actualizar datos de un inquilino
@@ -567,8 +604,12 @@ fun InquilinoScreen(
     onVolver: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Define una variable que almacena el estado actual de la UI,
+// conectándose al StateFlow del ViewModel mediante collectAsState()
+// para redibujar la pantalla automáticamente ante cualquier cambio.
     val uiState by viewModel.uiState.collectAsState()
-    //efecto que obtiene la lista de inquilinos mediante vm
+    //definimos este componente para lanzar una
+    // corrutina y obtener la lista de inquilinos mediante vm
     LaunchedEffect(Unit) {
         viewModel.obtenerTodos()
     }
@@ -610,7 +651,7 @@ fun InquilinoScreen(
                     }
                 )
             }
-
+//definimos este componente para obtener la lista de inquilinos mediante vm por primera vez
             LaunchedEffect(uiState.successMessage) {
                 if (uiState.successMessage != null) {
                     viewModel.limpiarMensajes()

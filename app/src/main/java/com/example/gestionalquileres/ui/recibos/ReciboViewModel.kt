@@ -140,6 +140,7 @@ class ReciboViewModel @Inject constructor(
     }
 
     fun cambiarEstadoPago(recibo: Recibo) {
+        // 1. Determinamos el nuevo estado: si actualmente está "Cobrado", pasa a "Pendiente"; de lo contrario, pasa a "Cobrado" (efecto interruptor/toggle)
         val nuevoEstado =
             if (recibo.estadoPago == Recibo.ESTADO_COBRADO) {
                 Recibo.ESTADO_PENDIENTE
@@ -147,20 +148,25 @@ class ReciboViewModel @Inject constructor(
                 Recibo.ESTADO_COBRADO
             }
 
+// 2. Lanzamos una corrutina en el hilo del ViewModel para manejar la operación de forma asíncrona
         viewModelScope.launch {
+            // Activamos el indicador de carga (spinner) en la interfaz y limpiamos cualquier mensaje anterior de éxito o error
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
                 errorMessage = null,
                 successMessage = null
             )
 
+            // 3. Ejecutamos la función del repositorio para actualizar el estado del pago en la base de datos
             when (
                 val resultado = reciboRepository.actualizarEstadoPago(
                     idRecibo = recibo.idRecibo,
                     nuevoEstado = nuevoEstado
                 )
             ) {
+                // Caso A: La actualización en la base de datos fue exitosa
                 is AppResult.Exito -> {
+                    // Actualizamos la lista local de recibos recorriéndola: si coincide el ID, cambiamos su estado de pago; si no, lo dejamos igual
                     val recibosActualizados = _uiState.value.recibos.map { actual ->
                         if (actual.idRecibo == recibo.idRecibo) {
                             actual.copy(estadoPago = nuevoEstado)
@@ -169,6 +175,7 @@ class ReciboViewModel @Inject constructor(
                         }
                     }
 
+                    // Actualizamos el estado de la UI: desactivamos la carga, pasamos la lista actualizada y mostramos un mensaje de éxito
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         recibos = recibosActualizados,
@@ -176,7 +183,9 @@ class ReciboViewModel @Inject constructor(
                     )
                 }
 
+                // Caso B: Ocurrió un error al intentar actualizar el estado
                 is AppResult.Error -> {
+                    // Actualizamos la UI: desactivamos la carga y guardamos el mensaje de error (o uno por defecto si la excepción no trae mensaje)
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         errorMessage = resultado.excepcion.message
@@ -205,14 +214,18 @@ class ReciboViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(textoBusqueda = texto)
     }
 
+    // Función para actualizar el filtro de estado actual (por ejemplo: Todos, Pendientes o Cobrados)
     fun actualizarFiltroEstado(filtro: String) {
+        // 1. Definimos un conjunto cerrado de filtros válidos permitidos por la interfaz/modelo
         val filtrosPermitidos = setOf(
             ReciboUiState.FILTRO_TODOS,
             ReciboUiState.FILTRO_PENDIENTES,
             ReciboUiState.FILTRO_COBRADOS
         )
 
+        // 2. Validamos que el filtro recibido esté estrictamente dentro de los permitidos por seguridad
         if (filtro in filtrosPermitidos) {
+            // 3. Si es válido, actualizamos el estado de la UI copiando el valor actual y modificando solo el filtro de estado
             _uiState.value = _uiState.value.copy(
                 filtroEstado = filtro
             )

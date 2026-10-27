@@ -18,23 +18,27 @@ data class Recibo(
     val montoTotal: Double = 0.0,
     val estadoPago: String = ESTADO_PENDIENTE
 ) {
+    // Bloque estático para definir constantes globales reutilizables relacionadas con los estados del recibo
     companion object {
-        const val ESTADO_PENDIENTE = "Pendiente"
-        const val ESTADO_COBRADO = "Cobrado"
+        const val ESTADO_PENDIENTE = "Pendiente" // Constante que representa el estado pendiente de pago
+        const val ESTADO_COBRADO = "Cobrado"     // Constante que representa el estado pagado/cobrado
     }
-    // CRITERIO 6: Generar una lista solo con los conceptos válidos (> 0) para la UI
+
+    // CRITERIO 6: Función que genera una lista estructurada con los conceptos válidos cuyo valor sea mayor a 0 para mostrarlos en la UI
     fun obtenerConceptosCobrar(): List<Pair<String, Double>> {
+        // Creamos una lista mutable para ir almacenando dinámicamente los conceptos que cumplan la condición
         val conceptos = mutableListOf<Pair<String, Double>>()
 
-        // Renta e IGV siempre van (asumiendo que rentaBase > 0)
+        // Verificamos y agregamos la Renta y el IGV si su valor es mayor a 0 (conceptos base obligatorios si aplican)
         if (rentaBase > 0.0) conceptos.add(Pair("Renta", rentaBase))
         if (montoIgv > 0.0) conceptos.add(Pair("IGV (18%)", montoIgv))
 
-        // Agregamos solo si el secretario ingresó un valor mayor a 0
+        // Agregamos servicios adicionales (Agua, Luz y Mantenimiento) solo si se ingresó un monto mayor a 0
         if (agua > 0.0) conceptos.add(Pair("Agua", agua))
         if (luz > 0.0) conceptos.add(Pair("Luz", luz))
         if (mantenimiento > 0.0) conceptos.add(Pair("mantenimiento", mantenimiento))
 
+        // Retornamos la lista final limpia con los conceptos listos para ser presentados en la interfaz de usuario
         return conceptos
     }
 }

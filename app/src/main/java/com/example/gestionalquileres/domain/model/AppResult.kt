@@ -10,18 +10,16 @@ sealed class AppResult<out T> {
     data class Error(val excepcion: Exception) : AppResult<Nothing>()
 }
 
-// Función de extensión que se ejecuta únicamente si el resultado fue un ÉXITO.
+// es una funcion de extension donde Si la operación salió bien
 inline fun <T> AppResult<T>.onSuccess(action: (T) -> Unit): AppResult<T> {
-    if (this is AppResult.Exito) action(valor) // Si es éxito, ejecuta la acción pasándole el dato
+    if (this is AppResult.Exito) action(valor)//ejecuta esto con el resultado
+    // y Si es éxito, ejecuta la acción pasándole el dato
     return this // Permite encadenar llamadas (method chaining)
 }
 
-// Función de extensión que se ejecuta únicamente si el resultado fue un ERROR.
+// Si la operación falló, ejecuta esto con el error y permite seguir de largo
 inline fun <T> AppResult<T>.onFailure(action: (Exception) -> Unit): AppResult<T> {
-    if (this is AppResult.Error) action(excepcion) // Si es error, ejecuta la acción pasándole la excepción
+    if (this is AppResult.Error) action(excepcion)// Si es error, ejecuta la
+    // acción pasándole la excepción
     return this // Permite encadenar llamadas
 }
-
-/* se creo este contenedor para que los errores de red no afecte la app, guardando y mostrando
-los exitos y errores en las operaciones, logrando una comunicacion entre el vm y la base de datos
- */

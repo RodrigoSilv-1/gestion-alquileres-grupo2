@@ -78,23 +78,28 @@ class ReciboRepository @Inject constructor(
         idRecibo: String,
         nuevoEstado: String
     ): AppResult<Unit> {
+        // 1. Validamos que el nuevo estado sea estrictamente uno de los permitidos por el modelo (Pendiente o Cobrado)
         if (
             nuevoEstado != Recibo.ESTADO_PENDIENTE &&
             nuevoEstado != Recibo.ESTADO_COBRADO
         ) {
+            // Si no es válido, retornamos un error de tipo IllegalArgumentException de inmediato
             return AppResult.Error(
                 IllegalArgumentException("El estado del recibo no es válido.")
             )
         }
 
         return try {
+            // 2. Buscamos el documento del recibo por su ID y actualizamos únicamente el campo "estadoPago"
             recibosCollection
                 .document(idRecibo)
                 .update("estadoPago", nuevoEstado)
-                .await()
+                .await() // Esperamos a que la operación de Firestore finalice de forma asíncrona
 
+            // Si la actualización es exitosa, retornamos AppResult.Exito indicando que se completó (Unit)
             AppResult.Exito(Unit)
         } catch (e: Exception) {
+            // 3. Si ocurre algún problema de red o con la base de datos, capturamos la excepción y la devolvemos como error
             AppResult.Error(e)
         }
     }

@@ -31,6 +31,7 @@ fun ReciboScreen(
     // esta variable conecta el vm con la interfaz, permite que ui este pendiente
     // de cualquier cambio en los datos y actualizarse mostrando la info correcta
     val uiState by viewModel.uiState.collectAsState()
+
     val context = LocalContext.current
 
 // Se ejecuta este componente cuando la pantalla entra por primera vez
@@ -120,22 +121,30 @@ fun ReciboScreen(
                     ),
                     singleLine = true
                 )
+                // Contenedor horizontal (Row) que ocupa todo el ancho disponible de la pantalla y separa sus elementos internos por 8dp
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // 1. Creamos una lista con las opciones de filtros disponibles obtenidas del estado
                     val filtros = listOf(
                         ReciboUiState.FILTRO_TODOS,
                         ReciboUiState.FILTRO_PENDIENTES,
                         ReciboUiState.FILTRO_COBRADOS
                     )
 
+                    // 2. Iteramos sobre cada elemento de la lista para generar dinámicamente un chip de filtro
                     filtros.forEach { filtro ->
                         FilterChip(
+                            // El chip se marca visualmente como seleccionado si coincide con el filtro actual del ViewModel
                             selected = uiState.filtroEstado == filtro,
+
+                            // Al hacer clic en el chip, se le comunica al ViewModel que actualice el filtro activo
                             onClick = {
                                 viewModel.actualizarFiltroEstado(filtro)
                             },
+
+                            // Contenido visual del chip, que muestra el texto correspondiente al filtro
                             label = {
                                 Text(filtro)
                             }
@@ -319,18 +328,26 @@ fun RegistrarReciboScreen(
             OutlinedButton(onClick = onCancelar, modifier = Modifier.weight(1f)) {
                 Text("Cancelar")
             }
+            // Componente Botón de Jetpack Compose para realizar la acción principal del formulario
             Button(
                 onClick = {
+                    // 1. Verificamos de forma segura si hay un contrato seleccionado en el estado del formulario
                     formState.contratoSeleccionado?.let { contrato ->
+                        // Si existe, ejecutamos la función de guardado pasando el contrato y los servicios (agua, luz, mantenimiento)
                         onGuardar(contrato, formState.agua, formState.luz, formState.mantenimiento)
                     }
                 },
+                // 2. El botón solo se habilita si hay un contrato seleccionado Y la interfaz no se encuentra en estado de carga (isLoading)
                 enabled = formState.contratoSeleccionado != null && !uiState.isLoading,
+                // 3. Modificador de diseño que distribuye el espacio disponible de manera equitativa (peso de 1)
                 modifier = Modifier.weight(1f)
             ) {
+                // 4. Cambiamos el contenido visual del botón de manera dinámica según el estado de carga
                 if (uiState.isLoading) {
+                    // Si está cargando, mostramos un indicador de progreso circular en miniatura con color blanco
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
                 } else {
+                    // Si no está cargando, mostramos el texto tradicional del botón
                     Text("Generar y Guardar")
                 }
             }

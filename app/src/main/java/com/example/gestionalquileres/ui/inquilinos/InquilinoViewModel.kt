@@ -47,14 +47,16 @@ class InquilinoViewModel @Inject constructor(
     // --- FUNCIONES DE BASE DE DATOS INTACTAS ---
 
     fun registrar(inquilino: Inquilino) {
+        //Aquí iniciamos una corrutina con viewModelScope.launch para que
+        //todo este proceso de registro ocurra de forma asíncrona en segundo plano
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
-                isLoading = true,
+                isLoading = true,//activar la bandera de carga y limpiando cualquier mensaje de error
+                successMessage = null,// o éxito previo para preparar la interfaz."
                 errorMessage = null,
-                successMessage = null
             )
 
-            repository.buscarPorDniCualquiera(inquilino.dni)
+            repository.buscarPorDniCualquiera(inquilino.dni)//llamamos al repositorio para consultar en la bd
                 .onSuccess { inquilinoExistente ->
                     // Evaluamos si se encontró un inquilino con ese DNI en la base de datos
                     if (inquilinoExistente != null) {
@@ -63,11 +65,12 @@ class InquilinoViewModel @Inject constructor(
 
                         // Evaluamos si el inquilino encontrado está INACTIVO (!active)
                         if (!inquilinoExistente.active) {
-                            // Preparamos el objeto para reactivarlo, heredando el ID antiguo que ya tenía en la base de datos
+                            // creamos una copia del inquilino que ibamos a registrar agregandole el id del inquilino viejo
                             val inquilinoParaReactivar = inquilino.copy(
                                 idInquilino = inquilinoExistente.idInquilino
                             )
-                            // Guardamos en el estado que se detectó un inquilino inactivo (para mostrar una alerta de confirmación en la UI)
+                            // Cambiamos el estado global de la app para que la pantalla detecte al
+                            // inquilino inactivo y lance la ventana emergente
                             _uiState.value = _uiState.value.copy(
                                 inquilinoInactivoDetectado = inquilinoParaReactivar
                             )

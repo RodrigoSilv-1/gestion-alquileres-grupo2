@@ -33,22 +33,27 @@ class InquilinoRepository @Inject constructor(
             AppResult.Error(error)
         }
     }
-
+// Es una funcion suspendida en el repositorio, que ejecuta en una corrutina y pausarse al
+//esperar una respuesta del servidor
+// Devuelve un AppResult que puede contener un Inquilino (si lo encuentra) o null (si no existe).
     suspend fun obtenerTodos(): AppResult<List<Inquilino>> {
+    //Utilizamos un bloque try-catch en el return para manejar el fallo de conexion al firestore
         return try {
+            //consultar y filtrar los registro quedandonos con los inquilinos activo
+            //descargando los y esperando la respuesta del servidor
             val snapshot = collection
                 .whereEqualTo("active", true)
                 .get()
-                .await()
-        //consultar y filtrar los registro quedandonos con los inquilinos activo
-        //descargando los y esperando la respuesta del servidor
+                .await()//suspende el proceso de obtenertodos mientras firebase extrae los docums
+            //para luego guardarlos en la variable
 
             val inquilinos = snapshot.documents.mapNotNull { documento ->
                 documento.toObject(Inquilino::class.java)
             } //recorre los registros obtenidos y los transforma en objetos tipo inquilino
 
             AppResult.Exito(inquilinos)
-            //empaqueta esa lista para enviarselo al vm
+            //empaqueta esa lista al completar exitosamente la operacion
+            //retorna al vm
         } catch (error: Exception) {
             AppResult.Error(error)
         }
@@ -60,7 +65,7 @@ class InquilinoRepository @Inject constructor(
                 .whereEqualTo("dni", dni)
                 .whereEqualTo("active", true)
                 .get()
-                .await()
+                .await()//
 
             val inquilinos = snapshot.documents.mapNotNull { documento ->
                 documento.toObject(Inquilino::class.java)
@@ -140,10 +145,11 @@ class InquilinoRepository @Inject constructor(
             AppResult.Error(error)
         }
     }
-
-    // Función asíncrona que busca un inquilino por su número de DNI.
+// Es una funcion suspendida que en el repositorio que ejecutarse en una corrutina y pausarse al
+//esperar una respuesta del servidor
 // Devuelve un AppResult que puede contener un Inquilino (si lo encuentra) o null (si no existe).
     suspend fun buscarPorDniCualquiera(dni: String): AppResult<Inquilino?> {
+    //Utilizamos un bloque try-catch en el return para manejar el fallo de conexion al firestore
         return try {
             // Consultamos a Firestore filtrando por el campo "dni",
             // limitando el resultado a 1 solo documento para optimizar la búsqueda.
@@ -151,7 +157,7 @@ class InquilinoRepository @Inject constructor(
                 .whereEqualTo("dni", dni)
                 .limit(1)
                 .get()
-                .await()
+                .await()//
 
             // Tomamos el primer documento que arroje la consulta (si existe) y lo convertimos a un objeto Inquilino;
             // si la lista está vacía, devuelve null automáticamente usando firstOrNull().
