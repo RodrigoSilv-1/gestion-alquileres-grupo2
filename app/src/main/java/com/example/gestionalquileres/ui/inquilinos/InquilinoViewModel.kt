@@ -2,11 +2,11 @@ package com.example.gestionalquileres.ui.inquilinos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.auth.repository.InquilinoRepository
+import com.example.gestionalquileres.data.repository.InquilinoRepository
 import com.example.gestionalquileres.domain.model.Inquilino
-import dagger.hilt.android.lifecycle.HiltViewModel
-import com.example.gestionalquileres.domain.model.onSuccess
 import com.example.gestionalquileres.domain.model.onFailure
+import com.example.gestionalquileres.domain.model.onSuccess
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -26,8 +26,19 @@ data class InmuebleUiState(
     // Buscador
     val tipoBusqueda: TipoBusqueda = TipoBusqueda.DISTRITO,
     val textoBusqueda: String = "",
+    val filtroAplicado: String = "",                         // texto con el que se pulsó "Buscar"
+    val tipoFiltroAplicado: TipoBusqueda = TipoBusqueda.DISTRITO,
 
     // Mensajes
     val successMessage: String? = null,
     val errorMessage: String? = null
-)
+) {
+    /** Lista que se muestra: `inmuebles` (completa) filtrada en memoria, sin consultar Firestore. */
+    val inmueblesVisibles: List<Inmueble>
+        get() = when {
+            filtroAplicado.isBlank() -> inmuebles
+            tipoFiltroAplicado == TipoBusqueda.DISTRITO ->
+                inmuebles.filter { it.distrito.contains(filtroAplicado, ignoreCase = true) }
+            else -> inmuebles.filter { it.codigoPostal == filtroAplicado }
+        }
+}

@@ -10,7 +10,8 @@ data class Contrato(
     val inquilinoId: String = "",
     val nombreInquilino: String = "",    // Nombre completo del inquilino
     val dniInquilino: String = "",       // DNI del inquilino
-    val precioRentaAcordado: Double = 0.0, // Monto de la renta acordada
+    val precioRentaAcordado: Double = 0.0,        // Monto de la renta acordada
+    val ingresoMensualInquilino: Double = 0.0,    // Sueldo del inquilino al firmar (copia, no referencia)
     val fechaInicio: String = "",        // Fecha de inicio del contrato
     val fechaFin: String = "",           // Fecha de término del contrato
     val active: Boolean = true           // True mientras esté vigente

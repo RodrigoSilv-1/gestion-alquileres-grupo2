@@ -2,8 +2,8 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.auth.repository.InmuebleRepository
-import com.example.gestionalquileres.data.auth.repository.UnidadAlquilableRepository
+import com.example.gestionalquileres.data.repository.InmuebleRepository
+import com.example.gestionalquileres.data.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
@@ -57,20 +57,20 @@ class InmuebleViewModel @Inject constructor(
     fun obtenerTodos() =
         cargarInmuebles("No se pudieron obtener los inmuebles.") { repository.obtenerTodos() }
 
+    /** Filtra en memoria sobre `uiState.inmuebles`, que ya trae todos los activos. */
     fun buscar() {
         val estado = _uiState.value
         val texto = estado.textoBusqueda.trim()
-        when {
-            texto.isBlank() -> obtenerTodos()
-            estado.tipoBusqueda == TipoBusqueda.DISTRITO ->
-                cargarInmuebles("No se pudo buscar por distrito.") { repository.obtenerPorDistrito(texto) }
-            else ->
-                cargarInmuebles("No se pudo buscar por código postal.") { repository.obtenerPorCodigoPostal(texto) }
+        if (texto.isBlank()) {
+            mostrarTodos()
+        } else {
+            _uiState.update { it.copy(filtroAplicado = texto, tipoFiltroAplicado = it.tipoBusqueda) }
         }
     }
 
+    /** Limpia el filtro y recarga la lista completa desde Firestore. */
     fun mostrarTodos() {
-        _uiState.update { it.copy(textoBusqueda = "") }
+        _uiState.update { it.copy(textoBusqueda = "", filtroAplicado = "") }
         obtenerTodos()
     }
 
@@ -117,19 +117,35 @@ class InmuebleViewModel @Inject constructor(
     fun darDeBaja(idInmueble: String) {
         viewModelScope.launch {
             iniciarOperacion()
-            repository.darDeBaja(idInmueble)
-                .onSuccess {
-                    _uiState.update { estado ->
-                        estado.copy(
-                            isLoading = false,
-                            inmuebles = estado.inmuebles.filterNot { it.idInmueble == idInmueble },
-                            inmuebleDarDeBaja = null,
-                            successMessage = "Inmueble dado de baja correctamente."
-                        )
-                    }
+            unidadRepository.tieneUnidadesOcupadas(idInmueble)
+                .onFailure { error ->
+                    bajaRechazada(error.message ?: "No se pudo verificar las unidades del inmueble.")
                 }
-                .onFailure { error -> fallo(error.message, "No se pudo dar de baja al inmueble.") }
+                .onSuccess { hayOcupadas ->
+                    if (hayOcupadas) bajaRechazada(MENSAJE_BAJA_BLOQUEADA)
+                    else ejecutarBaja(idInmueble)
+                }
         }
+    }
+
+    private suspend fun ejecutarBaja(idInmueble: String) {
+        repository.darDeBaja(idInmueble)
+            .onSuccess {
+                _uiState.update { estado ->
+                    estado.copy(
+                        isLoading = false,
+                        inmuebles = estado.inmuebles.filterNot { it.idInmueble == idInmueble },
+                        inmuebleDarDeBaja = null,
+                        successMessage = "Inmueble dado de baja correctamente."
+                    )
+                }
+            }
+            .onFailure { error -> bajaRechazada(error.message ?: "No se pudo dar de baja al inmueble.") }
+    }
+
+    /** Cierra el diálogo de baja y muestra el motivo en el Snackbar. */
+    private fun bajaRechazada(mensaje: String) {
+        _uiState.update { it.copy(isLoading = false, inmuebleDarDeBaja = null, errorMessage = mensaje) }
     }
 
     fun reactivarInmueble(inmueble: Inmueble) {
@@ -241,5 +257,11 @@ class InmuebleViewModel @Inject constructor(
 
     fun limpiarMensajes() {
         _uiState.update { it.copy(errorMessage = null, successMessage = null) }
+    }
+
+    private companion object {
+        const val MENSAJE_BAJA_BLOQUEADA =
+            "No se puede dar de baja: el inmueble tiene unidades alquiladas. " +
+                    "Finaliza primero los contratos vigentes."
     }
 }

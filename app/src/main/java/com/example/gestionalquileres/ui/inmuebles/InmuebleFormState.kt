@@ -4,6 +4,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.gestionalquileres.domain.model.MAX_UNIDADES_POR_INMUEBLE
 import com.example.gestionalquileres.domain.model.Inmueble
 
 /** Estado del formulario de inmueble. Sin argumentos = alta; con [inmueble] = edición. */
@@ -17,12 +18,29 @@ class InmuebleFormState(inmueble: Inmueble? = null) {
     var unidadesPorPiso by mutableStateOf(inmueble?.unidadesPorPiso?.toString().orEmpty())
     var fotografia by mutableStateOf(inmueble?.fotografia)
 
-    /** En el alta también se exige que haya al menos 1 piso y 1 unidad por piso. */
+    /** True si pisos × unidades supera el máximo. Se compara con Long para evitar desbordes. */
+    val excedeLimite: Boolean
+        get() {
+            val pisos = numeroPisos.toLongOrNull() ?: 0L
+            val unidades = unidadesPorPiso.toLongOrNull() ?: 0L
+            return pisos > MAX_UNIDADES_POR_INMUEBLE ||
+                    unidades > MAX_UNIDADES_POR_INMUEBLE ||
+                    pisos * unidades > MAX_UNIDADES_POR_INMUEBLE
+        }
+
+    val totalUnidades: Int
+        get() = (numeroPisos.toIntOrNull() ?: 0) * (unidadesPorPiso.toIntOrNull() ?: 0)
+
+    /** En el alta se exige al menos 1 piso, 1 unidad por piso y no superar el límite. */
     fun esValido(esNuevo: Boolean): Boolean =
         distrito.isNotBlank() &&
                 direccion.isNotBlank() &&
                 codigoPostal.isNotBlank() &&
-                (!esNuevo || ((numeroPisos.toIntOrNull() ?: 0) > 0 && (unidadesPorPiso.toIntOrNull() ?: 0) > 0))
+                (!esNuevo || (
+                        (numeroPisos.toIntOrNull() ?: 0) > 0 &&
+                                (unidadesPorPiso.toIntOrNull() ?: 0) > 0 &&
+                                !excedeLimite
+                        ))
 
     /** Si se pasa [base] se copia sobre ese inmueble (edición); si no, se crea uno nuevo. */
     fun toInmueble(base: Inmueble? = null): Inmueble = base?.copy(
