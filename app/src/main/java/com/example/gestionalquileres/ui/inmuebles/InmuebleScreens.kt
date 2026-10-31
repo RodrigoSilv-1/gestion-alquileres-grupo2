@@ -2,8 +2,6 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.filled.List
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,6 +59,7 @@ import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.ui.common.AppTopBar
 import com.example.gestionalquileres.ui.common.ImagenBase64
 
+// Pantalla principal: decide qué se muestra (listado, formulario, edición o detalle)
 @Composable
 fun InmuebleScreen(
     viewModel: InmuebleViewModel,
