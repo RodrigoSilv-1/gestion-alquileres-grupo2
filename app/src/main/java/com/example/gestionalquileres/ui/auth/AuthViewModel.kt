@@ -2,16 +2,16 @@ package com.example.gestionalquileres.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.auth.AuthRepository
+import com.example.gestionalquileres.domain.model.UserRole
+import com.example.gestionalquileres.domain.model.onFailure
+import com.example.gestionalquileres.domain.model.onSuccess
+import com.example.gestionalquileres.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import com.example.gestionalquileres.domain.model.onSuccess
-import com.example.gestionalquileres.domain.model.onFailure
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.example.gestionalquileres.domain.model.UserRole
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(

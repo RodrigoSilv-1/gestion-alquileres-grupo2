@@ -3,12 +3,13 @@ package com.example.gestionalquileres.data.auth
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
+import com.example.gestionalquileres.domain.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.google.firebase.auth.GoogleAuthProvider
 
 @Singleton
 class FirebaseAuthRepository @Inject constructor(

@@ -5,7 +5,7 @@ sealed class AppResult<out T> {
     data class Error(val excepcion: Exception) : AppResult<Nothing>()
 }
 
-// Estas funciones de extensión hacen que tus ViewModels sigan funcionando igual
+// Estas funciones de extensión hacen que los ViewModels sigan funcionando igual
 inline fun <T> AppResult<T>.onSuccess(action: (T) -> Unit): AppResult<T> {
     if (this is AppResult.Exito) action(valor)
     return this

@@ -1,7 +1,15 @@
 package com.example.gestionalquileres.ui.contrato
 
-import android.widget.Toast
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -9,14 +17,42 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.gestionalquileres.domain.comoMonto
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Contrato
+import com.example.gestionalquileres.ui.common.CampoFecha
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,46 +61,41 @@ fun ContratoScreen(
     onVolver: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    var mostrarFormulario by remember { mutableStateOf(false) }
+    var mostrarFormulario by rememberSaveable { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) { viewModel.cargarDatosIniciales() }
+
+    // Muestra errores/éxitos como Snackbar y los limpia (igual que en Inmuebles)
     LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
-        uiState.errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        val mensaje = uiState.errorMessage ?: uiState.successMessage
+        if (mensaje != null) {
+            if (uiState.errorMessage == null) mostrarFormulario = false // éxito: vuelve a la lista
+            snackbarHostState.showSnackbar(mensaje)
             viewModel.limpiarMensajes()
-        }
-        uiState.successMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.limpiarMensajes()
-            mostrarFormulario = false
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.cargarDatosIniciales()
+    // Con el formulario abierto, "atrás" vuelve a la lista; solo desde la lista sale del módulo
+    val volver: () -> Unit = {
+        if (mostrarFormulario) mostrarFormulario = false else onVolver()
     }
+    BackHandler(onBack = volver)
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (mostrarFormulario) "Nuevo Contrato" else "Gestión de Contratos",
-                            style = MaterialTheme.typography.titleLarge,
-                            maxLines = 1,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                    }
+                    Text(
+                        text = if (mostrarFormulario) "Nuevo Contrato" else "Gestión de Contratos",
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1
+                    )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (mostrarFormulario) mostrarFormulario = false else onVolver()
-                    }) {
+                    IconButton(onClick = volver) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
@@ -72,7 +103,10 @@ fun ContratoScreen(
         },
         floatingActionButton = {
             if (!mostrarFormulario) {
-                FloatingActionButton(onClick = { mostrarFormulario = true }) {
+                FloatingActionButton(onClick = {
+                    viewModel.prepararNuevoContrato() // formulario siempre en blanco
+                    mostrarFormulario = true
+                }) {
                     Icon(Icons.Default.Add, contentDescription = "Crear Contrato")
                 }
             }
@@ -85,24 +119,19 @@ fun ContratoScreen(
         ) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (mostrarFormulario) {
+                FormularioContrato(uiState = uiState, viewModel = viewModel)
             } else {
-                if (mostrarFormulario) {
-                    FormularioContrato(
-                        uiState = uiState,
-                        viewModel = viewModel
-                    )
-                } else {
-                    ListaContratosActivos(
-                        contratos = uiState.contratosActivos,
-                        onFinalizarContrato = { contrato ->
-                            viewModel.finalizarContrato(
-                                idContrato = contrato.idContrato,
-                                inmuebleId = contrato.inmuebleId,
-                                unidadId = contrato.unidadId
-                            )
-                        }
-                    )
-                }
+                ListaContratosActivos(
+                    contratos = uiState.contratosActivos,
+                    onFinalizarContrato = { contrato ->
+                        viewModel.finalizarContrato(
+                            idContrato = contrato.idContrato,
+                            inmuebleId = contrato.inmuebleId,
+                            unidadId = contrato.unidadId
+                        )
+                    }
+                )
             }
         }
     }
@@ -135,7 +164,10 @@ fun ListaContratosActivos(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(text = "Inmueble: ${contrato.direccionInmueble} (${contrato.distritoInmueble})")
                         Text(text = "Unidad: ${contrato.nombreUnidad}")
-                        Text(text = "Renta Acordada: $${contrato.precioRentaAcordado}")
+                        Text(text = "Renta Acordada: ${contrato.precioRentaAcordado.comoMonto()}")
+                        if (contrato.ingresoMensualInquilino > 0.0) {
+                            Text(text = "Ingreso del inquilino: ${contrato.ingresoMensualInquilino.comoMonto()}")
+                        }
                         Text(text = "Vigencia: Desde ${contrato.fechaInicio} hasta ${contrato.fechaFin}")
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -173,6 +205,10 @@ fun FormularioContrato(
     var expandInquilino by remember { mutableStateOf(false) }
     var expandUnidad by remember { mutableStateOf(false) }
 
+    val inquilinosDisponibles = remember(uiState.listaInquilinos, uiState.contratosActivos) {
+        uiState.inquilinosDisponibles
+    }
+
     val scrollState = rememberScrollState()
 
     Column(
@@ -200,14 +236,21 @@ fun FormularioContrato(
                 expanded = expandInquilino,
                 onDismissRequest = { expandInquilino = false }
             ) {
-                uiState.listaInquilinos.forEach { inquilino ->
+                if (inquilinosDisponibles.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text("${inquilino.nombre} - Sueldo: $${inquilino.sueldo}") },
-                        onClick = {
-                            viewModel.seleccionarInquilino(inquilino)
-                            expandInquilino = false
-                        }
+                        text = { Text("No hay inquilinos sin contrato vigente") },
+                        onClick = { expandInquilino = false }
                     )
+                } else {
+                    inquilinosDisponibles.forEach { inquilino ->
+                        DropdownMenuItem(
+                            text = { Text("${inquilino.nombre} - Sueldo: ${inquilino.sueldo.comoMonto()}") },
+                            onClick = {
+                                viewModel.seleccionarInquilino(inquilino)
+                                expandInquilino = false
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -252,27 +295,41 @@ fun FormularioContrato(
             }
         }
 
-        // Fechas unificadas con el formState
-        OutlinedTextField(
-            value = formState.fechaInicio,
-            onValueChange = { nuevaFecha ->
-                formState = formState.copy(fechaInicio = nuevaFecha)
-                viewModel.actualizarFechas(nuevaFecha, formState.fechaFin)
-            },
-            label = { Text("Fecha de Inicio (Ej. 2026-06-01)") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+        // Fechas con calendario
+        val hoy = remember { LocalDate.now() }
+        val inicio = runCatching { LocalDate.parse(formState.fechaInicio) }.getOrNull()
+
+        CampoFecha(
+            label = "Fecha de inicio",
+            fecha = formState.fechaInicio,
+            fechaMinima = hoy,
+            textoAyuda = "Desde hoy en adelante",
+            onFechaSeleccionada = { nuevoInicio ->
+                val minimoFin = LocalDate.parse(nuevoInicio).plusMonths(DURACION_MINIMA_MESES)
+                // Si el fin ya elegido ya no cumple los 3 meses, se borra
+                val finConservado = runCatching { LocalDate.parse(formState.fechaFin) }
+                    .getOrNull()
+                    ?.takeIf { !it.isBefore(minimoFin) }
+                    ?.toString()
+                    .orEmpty()
+
+                formState = formState.copy(fechaInicio = nuevoInicio, fechaFin = finConservado)
+                viewModel.actualizarFechas(nuevoInicio, finConservado)
+            }
         )
 
-        OutlinedTextField(
-            value = formState.fechaFin,
-            onValueChange = { nuevaFecha ->
-                formState = formState.copy(fechaFin = nuevaFecha)
-                viewModel.actualizarFechas(formState.fechaInicio, nuevaFecha)
-            },
-            label = { Text("Fecha de Fin (Ej. 2027-06-01)") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+        CampoFecha(
+            label = "Fecha de fin",
+            fecha = formState.fechaFin,
+            fechaMinima = inicio?.plusMonths(DURACION_MINIMA_MESES)
+                ?: hoy.plusMonths(DURACION_MINIMA_MESES),
+            habilitado = inicio != null,
+            textoAyuda = if (inicio == null) "Primero elige la fecha de inicio"
+            else "Duración mínima: $DURACION_MINIMA_MESES meses",
+            onFechaSeleccionada = { nuevoFin ->
+                formState = formState.copy(fechaFin = nuevoFin)
+                viewModel.actualizarFechas(formState.fechaInicio, nuevoFin)
+            }
         )
 
         // 3. Resultado de Solvencia
@@ -301,7 +358,9 @@ fun FormularioContrato(
         Button(
             onClick = { viewModel.registrarContrato() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState.esSolvente == true
+            enabled = uiState.esSolvente == true &&
+                    formState.fechaInicio.isNotBlank() &&
+                    formState.fechaFin.isNotBlank()
         ) {
             Text("Firmar y Registrar Contrato")
         }

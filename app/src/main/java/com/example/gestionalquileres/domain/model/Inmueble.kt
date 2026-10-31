@@ -11,3 +11,6 @@ data class Inmueble(
     val fotografia: String? = null,
     val active: Boolean = true
 )
+
+/** Máximo de unidades (numeroPisos × unidadesPorPiso) que se generan en un único lote de Firestore. */
+const val MAX_UNIDADES_POR_INMUEBLE = 400
