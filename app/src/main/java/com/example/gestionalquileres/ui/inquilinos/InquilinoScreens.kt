@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -63,6 +64,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -98,20 +100,16 @@ fun RegistrarInquilinoScreen(
     onCancelar: () -> Unit
 ) {
     val context = LocalContext.current
-    var nombre by remember { mutableStateOf("") }
-    var dni by remember { mutableStateOf("") }
-    var edad by remember { mutableStateOf("") }
-    var sexo by remember { mutableStateOf("") }
-    var fotografiaBase64 by remember { mutableStateOf<String?>(null) }
-    var telefono by remember { mutableStateOf("") }
-    var sueldo by remember { mutableStateOf("") } // <-- NUEVO ESTADO
 
-    // Selector de fotos nativo de Android
+    var formState by remember { mutableStateOf(InquilinoFormState()) }
+    var sexoExpandido by remember { mutableStateOf(false) }
+
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            fotografiaBase64 = uriABase64(context, uri)
+            val fotoComprimida = uriABase64(context, uri)
+            formState = formState.copy(fotografiaBase64 = fotoComprimida)
         }
     }
 
@@ -130,8 +128,8 @@ fun RegistrarInquilinoScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = nombre,
-            onValueChange = { nombre = it },
+            value = formState.nombre,
+            onValueChange = { formState = formState.copy(nombre = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Nombre") }
@@ -140,8 +138,8 @@ fun RegistrarInquilinoScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = dni,
-            onValueChange = { dni = it },
+            value = formState.dni,
+            onValueChange = { formState = formState.copy(dni = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("DNI") }
@@ -150,45 +148,40 @@ fun RegistrarInquilinoScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = telefono,
-            onValueChange = { telefono = it },
+            value = formState.telefono,
+            onValueChange = { formState = formState.copy(telefono = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Teléfono") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
-            )
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
         )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = edad,
-            onValueChange = { edad = it },
+            value = formState.edad,
+            onValueChange = { formState = formState.copy(edad = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Edad") }
+            label = { Text("Edad") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // NUEVO: Campo para el sueldo
-        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = sueldo,
-            onValueChange = { sueldo = it },
+            value = formState.sueldo,
+            onValueChange = { formState = formState.copy(sueldo = it) },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Sueldo Mensual ($)") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Menu desplegable para el sexo
-        var sexoExpandido by remember { mutableStateOf(false) }
-
+        // Menú desplegable para el sexo
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
-                value = sexo,
+                value = formState.sexo,
                 onValueChange = {},
                 readOnly = true,
                 shape = RoundedCornerShape(12.dp),
@@ -196,7 +189,6 @@ fun RegistrarInquilinoScreen(
                 label = { Text("Sexo") },
                 trailingIcon = { Text(if (sexoExpandido) "▲" else "▼") }
             )
-            // Captura el clic sobre todo el campo para abrir el menu
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -210,30 +202,25 @@ fun RegistrarInquilinoScreen(
                 DropdownMenuItem(
                     text = { Text("Masculino") },
                     onClick = {
-                        sexo = "Masculino"
+                        formState = formState.copy(sexo = "Masculino")
                         sexoExpandido = false
                     }
                 )
                 DropdownMenuItem(
                     text = { Text("Femenino") },
                     onClick = {
-                        sexo = "Femenino"
+                        formState = formState.copy(sexo = "Femenino")
                         sexoExpandido = false
                     }
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Fotografía",
-            style = MaterialTheme.typography.titleMedium
-        )
+        Text(text = "Fotografía", style = MaterialTheme.typography.titleMedium)
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Previsualizacion y selector de imagen
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -246,8 +233,8 @@ fun RegistrarInquilinoScreen(
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!fotografiaBase64.isNullOrBlank()) {
-                    val bytes = Base64.decode(fotografiaBase64, Base64.DEFAULT)
+                if (!formState.fotografiaBase64.isNullOrBlank()) {
+                    val bytes = Base64.decode(formState.fotografiaBase64, Base64.DEFAULT)
                     AsyncImage(
                         model = bytes,
                         contentDescription = "Foto inquilino",
@@ -262,7 +249,6 @@ fun RegistrarInquilinoScreen(
                     )
                 }
             }
-
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
@@ -271,17 +257,16 @@ fun RegistrarInquilinoScreen(
                         )
                     }
                 ) {
-                    Text(if (fotografiaBase64 == null) "Elegir foto" else "Cambiar foto")
+                    Text(if (formState.fotografiaBase64 == null) "Elegir foto" else "Cambiar foto")
                 }
 
-                if (fotografiaBase64 != null) {
-                    TextButton(onClick = { fotografiaBase64 = null }) {
+                if (formState.fotografiaBase64 != null) {
+                    TextButton(onClick = { formState = formState.copy(fotografiaBase64 = null) }) {
                         Text("Quitar foto", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -298,13 +283,13 @@ fun RegistrarInquilinoScreen(
             Button(
                 onClick = {
                     val nuevoInquilino = Inquilino(
-                        nombre = nombre.trim(),
-                        dni = dni.trim(),
-                        telefono = telefono.trim(),
-                        edad = edad.toIntOrNull() ?: 0,
-                        sexo = sexo.trim(),
-                        fotografia = fotografiaBase64,
-                        sueldo = sueldo.toDoubleOrNull() ?: 0.0 // <-- NUEVO
+                        nombre = formState.nombre.trim(),
+                        dni = formState.dni.trim(),
+                        telefono = formState.telefono.trim(),
+                        edad = formState.edad.toIntOrNull() ?: 0,
+                        sexo = formState.sexo.trim(),
+                        fotografia = formState.fotografiaBase64,
+                        sueldo = formState.sueldo.toDoubleOrNull() ?: 0.0
                     )
                     onGuardar(nuevoInquilino)
                 },
@@ -317,6 +302,7 @@ fun RegistrarInquilinoScreen(
 }
 
 // Pantalla para actualizar datos de un inquilino
+// Pantalla para actualizar datos de un inquilino optimizada con InquilinoFormState
 @Composable
 fun EditarInquilinoScreen(
     inquilino: Inquilino,
@@ -324,19 +310,30 @@ fun EditarInquilinoScreen(
     onCancelar: () -> Unit
 ) {
     val context = LocalContext.current
-    var nombre by remember { mutableStateOf(inquilino.nombre) }
-    var dni by remember { mutableStateOf(inquilino.dni) }
-    var edad by remember { mutableStateOf(inquilino.edad.toString()) }
-    var sexo by remember { mutableStateOf(inquilino.sexo) }
-    var fotografiaBase64 by remember { mutableStateOf(inquilino.fotografia) }
-    var telefono by remember { mutableStateOf(inquilino.telefono) }
-    var sueldo by remember { mutableStateOf(if (inquilino.sueldo > 0.0) inquilino.sueldo.toString() else "") } // <-- NUEVO ESTADO
+
+    // Inicializamos el estado del formulario con los datos existentes del inquilino
+    var formState by remember {
+        mutableStateOf(
+            InquilinoFormState(
+                nombre = inquilino.nombre,
+                dni = inquilino.dni,
+                edad = if (inquilino.edad > 0) inquilino.edad.toString() else "",
+                sexo = inquilino.sexo,
+                telefono = inquilino.telefono,
+                sueldo = if (inquilino.sueldo > 0.0) inquilino.sueldo.toString() else "",
+                fotografiaBase64 = inquilino.fotografia
+            )
+        )
+    }
+
+    var sexoExpandido by remember { mutableStateOf(false) }
 
     val selectorFotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            fotografiaBase64 = uriABase64(context, uri)
+            val fotoComprimida = uriABase64(context, uri)
+            formState = formState.copy(fotografiaBase64 = fotoComprimida)
         }
     }
 
@@ -355,8 +352,8 @@ fun EditarInquilinoScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = nombre,
-            onValueChange = { nombre = it },
+            value = formState.nombre,
+            onValueChange = { formState = formState.copy(nombre = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Nombre") }
@@ -365,54 +362,47 @@ fun EditarInquilinoScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = dni,
-            onValueChange = { dni = it },
+            value = formState.dni,
+            onValueChange = { formState = formState.copy(dni = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("DNI") }
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = telefono,
-            onValueChange = { telefono = it },
+            value = formState.telefono,
+            onValueChange = { formState = formState.copy(telefono = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Teléfono") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone
-            )
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = edad,
-            onValueChange = { edad = it },
+            value = formState.edad,
+            onValueChange = { formState = formState.copy(edad = it) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Edad") }
+            label = { Text("Edad") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = sueldo,
-            onValueChange = { sueldo = it },
+            value = formState.sueldo,
+            onValueChange = { formState = formState.copy(sueldo = it) },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Sueldo Mensual ($)") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         // Selector desplegable para actualizar sexo
-        var sexoExpandido by remember { mutableStateOf(false) }
-
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
-                value = sexo,
+                value = formState.sexo,
                 onValueChange = {},
                 readOnly = true,
                 shape = RoundedCornerShape(12.dp),
@@ -433,20 +423,19 @@ fun EditarInquilinoScreen(
                 DropdownMenuItem(
                     text = { Text("Masculino") },
                     onClick = {
-                        sexo = "Masculino"
+                        formState = formState.copy(sexo = "Masculino")
                         sexoExpandido = false
                     }
                 )
                 DropdownMenuItem(
                     text = { Text("Femenino") },
                     onClick = {
-                        sexo = "Femenino"
+                        formState = formState.copy(sexo = "Femenino")
                         sexoExpandido = false
                     }
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
@@ -468,8 +457,8 @@ fun EditarInquilinoScreen(
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!fotografiaBase64.isNullOrBlank()) {
-                    val bytes = Base64.decode(fotografiaBase64, Base64.DEFAULT)
+                if (!formState.fotografiaBase64.isNullOrBlank()) {
+                    val bytes = Base64.decode(formState.fotografiaBase64, Base64.DEFAULT)
                     AsyncImage(
                         model = bytes,
                         contentDescription = "Foto inquilino",
@@ -484,7 +473,6 @@ fun EditarInquilinoScreen(
                     )
                 }
             }
-
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
@@ -493,17 +481,16 @@ fun EditarInquilinoScreen(
                         )
                     }
                 ) {
-                    Text(if (fotografiaBase64 == null) "Elegir foto" else "Cambiar foto")
+                    Text(if (formState.fotografiaBase64 == null) "Elegir foto" else "Cambiar foto")
                 }
 
-                if (fotografiaBase64 != null) {
-                    TextButton(onClick = { fotografiaBase64 = null }) {
+                if (formState.fotografiaBase64 != null) {
+                    TextButton(onClick = { formState = formState.copy(fotografiaBase64 = null) }) {
                         Text("Quitar foto", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -520,13 +507,13 @@ fun EditarInquilinoScreen(
             Button(
                 onClick = {
                     val inquilinoActualizado = inquilino.copy(
-                        nombre = nombre.trim(),
-                        dni = dni.trim(),
-                        telefono = telefono.trim(),
-                        edad = edad.toIntOrNull() ?: inquilino.edad,
-                        sexo = sexo.trim(),
-                        fotografia = fotografiaBase64,
-                        sueldo = sueldo.toDoubleOrNull() ?: 0.0 // <-- NUEVO CAMPO
+                        nombre = formState.nombre.trim(),
+                        dni = formState.dni.trim(),
+                        telefono = formState.telefono.trim(),
+                        edad = formState.edad.toIntOrNull() ?: inquilino.edad,
+                        sexo = formState.sexo.trim(),
+                        fotografia = formState.fotografiaBase64,
+                        sueldo = formState.sueldo.toDoubleOrNull() ?: 0.0
                     )
                     onGuardar(inquilinoActualizado)
                 },
@@ -608,7 +595,6 @@ fun InquilinoScreen(
         }
 
         else -> {
-            // Manejo del AlertDialog de Dar de Baja leyendo desde el estado
             if (uiState.inquilinoDarDeBaja != null) {
                 AlertDialog(
                     onDismissRequest = { viewModel.seleccionarInquilinoParaBaja(null) },
@@ -785,7 +771,6 @@ fun InquilinoCard(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
             if (!inquilino.fotografia.isNullOrBlank()) {
                 val bytes = remember(inquilino.fotografia) { Base64.decode(inquilino.fotografia, Base64.DEFAULT) }
                 AsyncImage(

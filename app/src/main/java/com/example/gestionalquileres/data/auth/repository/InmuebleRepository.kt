@@ -2,9 +2,11 @@ package com.example.gestionalquileres.data.auth.repository
 
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
-import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -12,164 +14,95 @@ class InmuebleRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
 
-    // Referencia a la coleccion principal en Firestore
-    private val collection = firestore.collection("inmuebles")
+    private val collection = firestore.collection(COLECCION)
 
-    suspend fun registrar(inmueble: Inmueble): AppResult<Inmueble> {
-        return try {
-            val documento = collection.document()
-            val idInmueble = documento.id // Corregido: se quitó la coma
+    /**
+     * Registra el inmueble y genera sus unidades alquilables.
+     * Se escribe por lotes (WriteBatch): el inmueble va en el primer lote junto
+     * con las primeras unidades, así nunca quedan unidades huérfanas.
+     */
+    suspend fun registrar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
+        val documento = collection.document()
+        val nuevo = inmueble.copy(idInmueble = documento.id, active = true)
+        val unidades = documento.collection(SUBCOLECCION_UNIDADES)
 
-            val nuevoInmueble = inmueble.copy(
-                idInmueble = idInmueble, // Corregido: se usa la variable correcta
-                active = true
-            )
-
-            // Generamos automáticamente las unidades alquilables usando la subcolección ANTES de retornar
-            generarUnidadesAlquilables(documento, idInmueble, inmueble.numeroPisos, inmueble.unidadesPorPiso)
-
-            documento.set(nuevoInmueble).await()
-
-            AppResult.Exito(nuevoInmueble) // Todo usa AppResult
-        } catch (error: Exception) {
-            AppResult.Error(error)
-        }
-    }
-
-    private suspend fun generarUnidadesAlquilables(
-        inmuebleRef: com.google.firebase.firestore.DocumentReference,
-        inmuebleId: String,
-        numeroPisos: Int,
-        unidadesPorPiso: Int
-    ) {
-        val unidadesCollection = inmuebleRef.collection("unidadesAlquilables")
-
-        for (piso in 1..numeroPisos) {
-            for (unidadNum in 1..unidadesPorPiso) {
-                val unidadRef = unidadesCollection.document()
-
-                // Nomenclatura: "101"
-                val nombreFormateado = "$piso${unidadNum.toString().padStart(2, '0')}"
-
-                val unidadAlquilable = UnidadAlquilable(
-                    id = unidadRef.id,
-                    inmuebleId = inmuebleId,
-                    piso = piso,
-                    numeroUnidad = unidadNum,
-                    nombreFormateado = nombreFormateado,
-                    estaOcupada = false
-                )
-
-                unidadRef.set(unidadAlquilable).await()
+        val escrituras = buildList<Pair<DocumentReference, Any>> {
+            add(documento to nuevo)
+            for (piso in 1..nuevo.numeroPisos) {
+                for (numero in 1..nuevo.unidadesPorPiso) {
+                    val ref = unidades.document()
+                    add(
+                        ref to UnidadAlquilable(
+                            id = ref.id,
+                            inmuebleId = documento.id,
+                            piso = piso,
+                            numeroUnidad = numero,
+                            nombreFormateado = "$piso${numero.toString().padStart(2, '0')}", // "101"
+                            estaOcupada = false
+                        )
+                    )
+                }
             }
         }
-    }
 
-
-    // Trae solo los inmuebles que están activos
-    suspend fun obtenerTodos(): AppResult<List<Inmueble>> {
-        return try {
-            val snapshot = collection
-                .whereEqualTo("active", true)
-                .get()
-                .await()
-
-            val inmuebles = snapshot.documents.mapNotNull { documento ->
-                documento.toObject(Inmueble::class.java)
-            }
-
-            AppResult.Exito(inmuebles)
-        } catch (error: Exception) {
-            AppResult.Error(error)
+        escrituras.chunked(MAX_ESCRITURAS_POR_LOTE).forEach { grupo ->
+            firestore.batch().apply { grupo.forEach { (ref, dato) -> set(ref, dato) } }.commit().await()
         }
+
+        nuevo
     }
 
-    // Filtra inmuebles activos por coincidencia exacta del código postal
-    suspend fun obtenerPorCodigoPostal(codigoPostal: String): AppResult<List<Inmueble>> {
-        return try {
-            val snapshot = collection
+    // ---------- Lecturas (solo inmuebles activos) ----------
+
+    suspend fun obtenerTodos(): AppResult<List<Inmueble>> =
+        consultar(collection.whereEqualTo("active", true))
+
+    suspend fun obtenerPorCodigoPostal(codigoPostal: String): AppResult<List<Inmueble>> =
+        consultar(
+            collection
                 .whereEqualTo("codigoPostal", codigoPostal)
                 .whereEqualTo("active", true)
-                .get()
-                .await()
+        )
 
-            val inmuebles = snapshot.documents.mapNotNull { documento ->
-                documento.toObject(Inmueble::class.java)
-            }
-            AppResult.Exito(inmuebles)
-        } catch (error: Exception) {
-            AppResult.Error(error)
-        }
+    /** Firestore no soporta "contiene", por eso se filtra el distrito en memoria. */
+    suspend fun obtenerPorDistrito(distrito: String): AppResult<List<Inmueble>> = appResultOf {
+        collection.whereEqualTo("active", true).get().await()
+            .aInmuebles()
+            .filter { it.distrito.contains(distrito, ignoreCase = true) }
     }
 
-    // Busca inmuebles activos por coincidencia de texto en el distrito
-    suspend fun obtenerporDistrito(distrito: String): Result<List<Inmueble>> {
-        return try {
-            val snapshot = collection
-                .whereEqualTo("active", true)
-                .get()
-                .await()
+    // ---------- Escrituras ----------
 
-            val inmuebles = snapshot.documents
-                .mapNotNull { documento ->
-                    documento.toObject(Inmueble::class.java)
-                }
-                .filter { inmueble ->
-                    inmueble.distrito.contains(distrito, ignoreCase = true)
-                }
-
-            Result.success(inmuebles)
-        } catch (error: Exception) {
-            Result.failure(error)
-        }
+    suspend fun actualizar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
+        require(inmueble.idInmueble.isNotBlank()) { "El ID del inmueble es obligatorio." }
+        collection.document(inmueble.idInmueble).set(inmueble).await()
+        inmueble
     }
 
-    // Sobrescribe los datos de un inmueble existente usando su ID
-    suspend fun actualizar(inmueble: Inmueble): AppResult<Inmueble> {
-        return try {
-            if (inmueble.idInmueble.isBlank()) {
-                return AppResult.Error(Exception("El ID del inmueble es obligatorio."))
-            }
-
-            collection
-                .document(inmueble.idInmueble)
-                .set(inmueble)
-                .await()
-
-            AppResult.Exito(inmueble)
-        } catch (error: Exception) {
-            AppResult.Error(error)
-        }
+    suspend fun darDeBaja(idInmueble: String): AppResult<Unit> = appResultOf {
+        require(idInmueble.isNotBlank()) { "El ID del inmueble es obligatorio." }
+        collection.document(idInmueble).update("active", false).await()
+        Unit
     }
 
-    suspend fun darDeBaja(idInmueble: String): AppResult<Unit> {
-        return try {
-            if (idInmueble.isBlank()) {
-                return AppResult.Error(Exception("El ID del inmueble es obligatorio."))
-            }
-
-            collection
-                .document(idInmueble)
-                .update("active", false)
-                .await()
-
-            AppResult.Exito(Unit)
-        } catch (error: Exception) {
-            AppResult.Error(error)
-        }
+    suspend fun reactivarYActualizar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
+        require(inmueble.idInmueble.isNotBlank()) { "El ID del inmueble es obligatorio." }
+        val reactivado = inmueble.copy(active = true)
+        collection.document(reactivado.idInmueble).set(reactivado).await()
+        reactivado
     }
 
-    suspend fun reactivarYActualizar(inmueble: Inmueble): AppResult<Inmueble> {
-        return try {
-            val inmuebleReactivado = inmueble.copy(active = true)
-            collection
-                .document(inmuebleReactivado.idInmueble)
-                .set(inmuebleReactivado)
-                .await()
+    // ---------- Helpers privados ----------
 
-            AppResult.Exito(inmuebleReactivado)
-        } catch (error: Exception) {
-            AppResult.Error(error)
-        }
+    private suspend fun consultar(query: Query): AppResult<List<Inmueble>> =
+        appResultOf { query.get().await().aInmuebles() }
+
+    private fun QuerySnapshot.aInmuebles(): List<Inmueble> =
+        documents.mapNotNull { doc -> doc.toObject(Inmueble::class.java)?.copy(idInmueble = doc.id) }
+
+    private companion object {
+        const val COLECCION = "inmuebles"
+        const val SUBCOLECCION_UNIDADES = "unidadesAlquilables"
+        const val MAX_ESCRITURAS_POR_LOTE = 400 // Firestore permite 500 por lote
     }
 }

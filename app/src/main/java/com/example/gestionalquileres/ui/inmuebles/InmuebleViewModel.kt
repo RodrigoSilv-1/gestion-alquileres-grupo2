@@ -2,303 +2,244 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.domain.model.onSuccess
-import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.data.auth.repository.InmuebleRepository
-import com.example.gestionalquileres.data.auth.repository.InquilinoRepository
 import com.example.gestionalquileres.data.auth.repository.UnidadAlquilableRepository
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
+import com.example.gestionalquileres.domain.model.UnidadAlquilable
+import com.example.gestionalquileres.domain.model.onFailure
+import com.example.gestionalquileres.domain.model.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
-import com.example.gestionalquileres.domain.model.Inquilino
-import com.example.gestionalquileres.ui.inquilinos.InquilinoUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class InmuebleViewModel @Inject constructor(
     private val repository: InmuebleRepository,
-    private val unidadRepository: UnidadAlquilableRepository // <-- Repositorio inyectado correctamente por Hilt
+    private val unidadRepository: UnidadAlquilableRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InmuebleUiState())
     val uiState: StateFlow<InmuebleUiState> = _uiState.asStateFlow()
 
-    // Registro del inmueble
+    // ------------------------------------------------------------------
+    // Helpers privados
+    // ------------------------------------------------------------------
+
+    private fun iniciarOperacion() {
+        _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+    }
+
+    private fun fallo(mensaje: String?, porDefecto: String) {
+        _uiState.update { it.copy(isLoading = false, errorMessage = mensaje ?: porDefecto) }
+    }
+
+    private fun cargarInmuebles(
+        errorPorDefecto: String,
+        consulta: suspend () -> AppResult<List<Inmueble>>
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            consulta()
+                .onSuccess { lista -> _uiState.update { it.copy(isLoading = false, inmuebles = lista) } }
+                .onFailure { error -> fallo(error.message, errorPorDefecto) }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Lectura y búsqueda
+    // ------------------------------------------------------------------
+
+    fun obtenerTodos() =
+        cargarInmuebles("No se pudieron obtener los inmuebles.") { repository.obtenerTodos() }
+
+    fun buscar() {
+        val estado = _uiState.value
+        val texto = estado.textoBusqueda.trim()
+        when {
+            texto.isBlank() -> obtenerTodos()
+            estado.tipoBusqueda == TipoBusqueda.DISTRITO ->
+                cargarInmuebles("No se pudo buscar por distrito.") { repository.obtenerPorDistrito(texto) }
+            else ->
+                cargarInmuebles("No se pudo buscar por código postal.") { repository.obtenerPorCodigoPostal(texto) }
+        }
+    }
+
+    fun mostrarTodos() {
+        _uiState.update { it.copy(textoBusqueda = "") }
+        obtenerTodos()
+    }
+
+    // ------------------------------------------------------------------
+    // Altas, bajas y modificaciones
+    // ------------------------------------------------------------------
+
     fun registrar(inmueble: Inmueble) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null,
-                successMessage = null
-            )
-
-            ejecutarRegistroNuevo(inmueble)
-        }
-    }
-
-    // --- FUNCIONES DE LECTURA ---
-
-    fun obtenerTodos() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
-
-            repository.obtenerTodos()
-                .onSuccess { lista ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        inmuebles = lista
-                    )
+            iniciarOperacion()
+            repository.registrar(inmueble)
+                .onSuccess { nuevo ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            inmuebles = it.inmuebles + nuevo,
+                            mostrandoFormularioRegistro = false,
+                            successMessage = "Inmueble registrado correctamente."
+                        )
+                    }
                 }
-                .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudieron obtener los inmuebles."
-                    )
-                }
-        }
-    }
-
-    fun obtenerPorCodigoPostal(codigoPostal: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
-
-            repository.obtenerPorCodigoPostal(codigoPostal)
-                .onSuccess { lista ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        inmuebles = lista
-                    )
-                }
-                .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo buscar por código postal."
-                    )
-                }
-        }
-    }
-
-    // Busca inmuebles activos por coincidencia de distrito
-    fun obtenerPorDistrito(distrito: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
-
-            repository.obtenerporDistrito(distrito)
-                .onSuccess { lista ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        inmuebles = lista
-                    )
-                }
-                .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo buscar por distrito."
-                    )
-                }
+                .onFailure { error -> fallo(error.message, "No se pudo registrar el inmueble.") }
         }
     }
 
     fun actualizar(inmueble: Inmueble) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null,
-                successMessage = null
-            )
-
+            iniciarOperacion()
             repository.actualizar(inmueble)
-                .onSuccess {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        successMessage = "Datos del inmueble actualizados correctamente."
-                    )
-
-                    obtenerTodos()
+                .onSuccess { actualizado ->
+                    _uiState.update { estado ->
+                        estado.copy(
+                            isLoading = false,
+                            inmuebles = estado.inmuebles.map { if (it.idInmueble == actualizado.idInmueble) actualizado else it },
+                            inmuebleSeleccionado = null,
+                            successMessage = "Datos del inmueble actualizados correctamente."
+                        )
+                    }
                 }
-                .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo actualizar el inmueble."
-                    )
-                }
+                .onFailure { error -> fallo(error.message, "No se pudo actualizar el inmueble.") }
         }
     }
 
     fun darDeBaja(idInmueble: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null,
-                successMessage = null
-            )
-
+            iniciarOperacion()
             repository.darDeBaja(idInmueble)
                 .onSuccess {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        successMessage = "Inmueble dado de baja correctamente."
-                    )
-
-                    obtenerTodos()
+                    _uiState.update { estado ->
+                        estado.copy(
+                            isLoading = false,
+                            inmuebles = estado.inmuebles.filterNot { it.idInmueble == idInmueble },
+                            inmuebleDarDeBaja = null,
+                            successMessage = "Inmueble dado de baja correctamente."
+                        )
+                    }
                 }
-                .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message
-                            ?: "No se pudo dar de baja al inmueble."
-                    )
-                }
+                .onFailure { error -> fallo(error.message, "No se pudo dar de baja al inmueble.") }
         }
     }
 
-    // Inserta un registro nuevo y lo anexa a la lista local
-    private suspend fun ejecutarRegistroNuevo(inmueble: Inmueble) {
-        repository.registrar(inmueble)
-            .onSuccess { nuevoInmueble ->
-                val listaActualizada = _uiState.value.inmuebles + nuevoInmueble
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    inmuebles = listaActualizada,
-                    successMessage = "Inmueble registrado correctamente."
-                )
-            }
-            .onFailure { error ->
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = error.message ?: "No se pudo registrar el inmueble."
-                )
-            }
-    }
-
-    // Cambia active a true y suma el inmueble de vuelta a la lista activa
     fun reactivarInmueble(inmueble: Inmueble) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null,
-                successMessage = null,
-                inmuebleInactivoDetectado = null
-            )
-
+            iniciarOperacion()
+            _uiState.update { it.copy(inmuebleInactivoDetectado = null) }
             repository.reactivarYActualizar(inmueble)
-                .onSuccess { inmuebleReactivado ->
-                    val listaActualizada = _uiState.value.inmuebles + inmuebleReactivado
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        inmuebles = listaActualizada,
-                        successMessage = "Inmueble reactivado con éxito."
-                    )
+                .onSuccess { reactivado ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            inmuebles = it.inmuebles + reactivado,
+                            successMessage = "Inmueble reactivado con éxito."
+                        )
+                    }
                 }
-                .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "No se pudo reactivar el inmueble."
-                    )
-                }
+                .onFailure { error -> fallo(error.message, "No se pudo reactivar el inmueble.") }
         }
     }
 
-    // Actualiza el texto del número de pisos en el estado
-    fun onNumeroPisosChanged(numero: String) {
-        _uiState.value = _uiState.value.copy(numeroPisos = numero)
-    }
+    // ------------------------------------------------------------------
+    // Detalle: unidades alquilables
+    // ------------------------------------------------------------------
 
-    // Actualiza el texto de las unidades por piso en el estado
-    fun onUnidadesPorPisoChanged(unidades: String) {
-        _uiState.value = _uiState.value.copy(unidadesPorPiso = unidades)
-    }
-
-    // Consulta las unidades alquilables de un inmueble específico usando su subcolección
-    fun obtenerUnidadesPorInmueble(inmuebleId: String) {
+    fun verDetalle(inmueble: Inmueble) {
+        _uiState.update {
+            it.copy(inmuebleEnDetalle = inmueble, unidadesAlquilables = emptyList(), cargandoUnidades = true)
+        }
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-
-            // Ya no instanciamos manualmente, usamos la variable inyectada arriba
-            unidadRepository.obtenerUnidadesPorInmueble(inmuebleId)
-                .onSuccess { listaUnidades ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        unidadesAlquilables = listaUnidades
-                    )
+            unidadRepository.obtenerUnidadesPorInmueble(inmueble.idInmueble)
+                .onSuccess { unidades ->
+                    _uiState.update {
+                        it.copy(cargandoUnidades = false, unidadesAlquilables = unidades.ordenadas())
+                    }
                 }
                 .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "No se pudieron obtener las unidades alquilables."
-                    )
+                    _uiState.update {
+                        it.copy(
+                            cargandoUnidades = false,
+                            errorMessage = error.message ?: "No se pudieron obtener las unidades alquilables."
+                        )
+                    }
                 }
         }
     }
 
     fun actualizarPrecioUnidad(inmuebleId: String, unidadId: String, nuevoPrecio: Double) {
         viewModelScope.launch {
-            // Ya no instanciamos manualmente, usamos la variable inyectada arriba
             unidadRepository.actualizarPrecioRenta(inmuebleId, unidadId, nuevoPrecio)
                 .onSuccess {
-                    obtenerUnidadesPorInmueble(inmuebleId) // Refresca la lista
+                    _uiState.update { estado ->
+                        estado.copy(
+                            unidadesAlquilables = estado.unidadesAlquilables.map { unidad ->
+                                if (unidad.id == unidadId) unidad.copy(precioRenta = nuevoPrecio) else unidad
+                            }
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update { it.copy(errorMessage = error.message ?: "No se pudo actualizar el precio.") }
                 }
         }
     }
 
-    // Cierra el dialogo de reactivación si el usuario cancela
-    fun cancelarReactivacion() {
-        _uiState.value = _uiState.value.copy(
-            inmuebleInactivoDetectado = null,
-            errorMessage = null
-        )
-    }
+    private fun List<UnidadAlquilable>.ordenadas() =
+        sortedWith(compareBy<UnidadAlquilable>({ it.piso }, { it.numeroUnidad }))
 
-    // Limpia alertas de error o confirmación
-    fun limpiarMensajes() {
-        _uiState.value = _uiState.value.copy(
-            errorMessage = null,
-            successMessage = null
-        )
-    }
-
-    // Quita la selección del inmueble actual
-    fun limpiarInmuebleSeleccionado() {
-        _uiState.value = _uiState.value.copy(
-            inmuebleSeleccionado = null
-        )
-    }
-
-    // --- FUNCIONES DE ESTADO DE LA INTERFAZ (UI STATE) ---
+    // ------------------------------------------------------------------
+    // Estado de la interfaz
+    // ------------------------------------------------------------------
 
     fun mostrarFormularioRegistro(mostrar: Boolean) {
-        _uiState.value = _uiState.value.copy(mostrandoFormularioRegistro = mostrar)
+        _uiState.update {
+            it.copy(mostrandoFormularioRegistro = mostrar, errorMessage = null, successMessage = null)
+        }
     }
 
     fun seleccionarInmuebleParaEditar(inmueble: Inmueble?) {
-        _uiState.value = _uiState.value.copy(inmuebleSeleccionado = inmueble)
+        _uiState.update { it.copy(inmuebleSeleccionado = inmueble) }
     }
 
     fun seleccionarInmuebleParaBaja(inmueble: Inmueble?) {
-        _uiState.value = _uiState.value.copy(inmuebleDarDeBaja = inmueble)
+        _uiState.update { it.copy(inmuebleDarDeBaja = inmueble) }
     }
 
-    fun actualizarTipoBusqueda(tipo: String) {
-        _uiState.value = _uiState.value.copy(tipoBusqueda = tipo)
+    /** Cierra formulario, edición o detalle y vuelve al listado. */
+    fun volverAlListado() {
+        _uiState.update {
+            it.copy(
+                mostrandoFormularioRegistro = false,
+                inmuebleSeleccionado = null,
+                inmuebleEnDetalle = null,
+                unidadesAlquilables = emptyList()
+            )
+        }
+    }
+
+    fun cancelarReactivacion() {
+        _uiState.update { it.copy(inmuebleInactivoDetectado = null, errorMessage = null) }
+    }
+
+    fun actualizarTipoBusqueda(tipo: TipoBusqueda) {
+        _uiState.update { it.copy(tipoBusqueda = tipo) }
     }
 
     fun actualizarTextoBusqueda(texto: String) {
-        _uiState.value = _uiState.value.copy(textoBusqueda = texto)
+        _uiState.update { it.copy(textoBusqueda = texto) }
+    }
+
+    fun limpiarMensajes() {
+        _uiState.update { it.copy(errorMessage = null, successMessage = null) }
     }
 }

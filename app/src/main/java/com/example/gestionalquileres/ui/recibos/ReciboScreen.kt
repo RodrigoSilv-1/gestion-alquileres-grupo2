@@ -66,16 +66,21 @@ fun ReciboScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { onVolver() }
+                        modifier = Modifier
+                            .weight(1f) // Permite que el título ocupe el espacio necesario
+                            .clickable { onVolver() }
                     ) {
                         IconButton(onClick = onVolver) {
                             Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver")
                         }
                         Text(
                             text = "Gestión de Recibos",
-                            style = MaterialTheme.typography.headlineMedium
+                            style = MaterialTheme.typography.headlineMedium,
+                            maxLines = 2 // <--- Permite que baje a la segunda línea si no entra horizontalmente
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Button(
                         onClick = {
@@ -134,11 +139,9 @@ fun RegistrarReciboScreen(
     onCancelar: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var contratoSeleccionado by remember { mutableStateOf<Contrato?>(null) }
 
-    var agua by remember { mutableStateOf("") }
-    var luz by remember { mutableStateOf("") }
-    var ipc by remember { mutableStateOf("") }
+    // ¡Un solo estado agrupado en lugar de 4 variables sueltas!
+    var formState by remember { mutableStateOf(ReciboFormState()) }
 
     LaunchedEffect(Unit) {
         onCargarContratos()
@@ -159,7 +162,7 @@ fun RegistrarReciboScreen(
             onExpandedChange = { expanded = !expanded }
         ) {
             OutlinedTextField(
-                value = contratoSeleccionado?.let { "${it.nombreInquilino} - ${it.nombreUnidad}" } ?: "Seleccione un contrato vigente",
+                value = formState.contratoSeleccionado?.let { "${it.nombreInquilino} -${it.nombreUnidad}" } ?: "Seleccione un contrato vigente",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Contrato (Inquilino / Unidad)") },
@@ -175,9 +178,9 @@ fun RegistrarReciboScreen(
                 } else {
                     uiState.contratosActivos.forEach { contrato ->
                         DropdownMenuItem(
-                            text = { Text("${contrato.nombreInquilino} - ${contrato.nombreUnidad}") },
+                            text = { Text("${contrato.nombreInquilino} -${contrato.nombreUnidad}") },
                             onClick = {
-                                contratoSeleccionado = contrato
+                                formState = formState.copy(contratoSeleccionado = contrato)
                                 expanded = false
                             }
                         )
@@ -190,7 +193,7 @@ fun RegistrarReciboScreen(
 
         // Campo de Renta Base (Bloqueado)
         OutlinedTextField(
-            value = contratoSeleccionado?.precioRentaAcordado?.toString() ?: "0.0",
+            value = formState.contratoSeleccionado?.precioRentaAcordado?.toString() ?: "0.0",
             onValueChange = {},
             label = { Text("Renta Base Acordada (Fija)") },
             readOnly = true,
@@ -201,26 +204,26 @@ fun RegistrarReciboScreen(
         Text(text = "Servicios del mes (Opcional)", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Campos variables
+        // Campos variables utilizando el estado unificado con `.copy(...)`
         OutlinedTextField(
-            value = agua,
-            onValueChange = { agua = it },
+            value = formState.agua,
+            onValueChange = { formState = formState.copy(agua = it) },
             label = { Text("Agua") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = luz,
-            onValueChange = { luz = it },
+            value = formState.luz,
+            onValueChange = { formState = formState.copy(luz = it) },
             label = { Text("Luz") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = ipc,
-            onValueChange = { ipc = it },
+            value = formState.ipc,
+            onValueChange = { formState = formState.copy(ipc = it) },
             label = { Text("IPC (Ajuste)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -242,8 +245,12 @@ fun RegistrarReciboScreen(
                 Text("Cancelar")
             }
             Button(
-                onClick = { onGuardar(contratoSeleccionado!!, agua, luz, ipc) },
-                enabled = contratoSeleccionado != null && !uiState.isLoading,
+                onClick = {
+                    formState.contratoSeleccionado?.let { contrato ->
+                        onGuardar(contrato, formState.agua, formState.luz, formState.ipc)
+                    }
+                },
+                enabled = formState.contratoSeleccionado != null && !uiState.isLoading,
                 modifier = Modifier.weight(1f)
             ) {
                 if (uiState.isLoading) {
@@ -274,7 +281,7 @@ fun ReciboCard(recibo: Recibo) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Fecha Emisión: ${recibo.fechaEmision}", style = MaterialTheme.typography.bodyMedium)
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Usamos la función inteligente del modelo para mostrar solo los conceptos válidos
             recibo.obtenerConceptosCobrar().forEach { concepto ->
@@ -287,7 +294,7 @@ fun ReciboCard(recibo: Recibo) {
                 }
             }
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
