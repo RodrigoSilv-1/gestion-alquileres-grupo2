@@ -174,7 +174,6 @@ fun RegistrarInquilinoScreen(
             label = { Text("Sueldo Mensual ($)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         // Menú desplegable para el sexo
@@ -214,7 +213,6 @@ fun RegistrarInquilinoScreen(
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(text = "Fotografía", style = MaterialTheme.typography.titleMedium)
@@ -249,7 +247,6 @@ fun RegistrarInquilinoScreen(
                     )
                 }
             }
-
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
@@ -268,7 +265,6 @@ fun RegistrarInquilinoScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -370,7 +366,6 @@ fun EditarInquilinoScreen(
             modifier = Modifier.fillMaxWidth(),
             label = { Text("DNI") }
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
@@ -381,7 +376,6 @@ fun EditarInquilinoScreen(
             label = { Text("Teléfono") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
@@ -392,7 +386,6 @@ fun EditarInquilinoScreen(
             label = { Text("Edad") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
@@ -402,7 +395,6 @@ fun EditarInquilinoScreen(
             label = { Text("Sueldo Mensual ($)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         // Selector desplegable para actualizar sexo
@@ -442,7 +434,6 @@ fun EditarInquilinoScreen(
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
@@ -480,7 +471,6 @@ fun EditarInquilinoScreen(
                     )
                 }
             }
-
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
@@ -499,7 +489,6 @@ fun EditarInquilinoScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -604,7 +593,6 @@ fun InquilinoScreen(
         }
 
         else -> {
-            // Manejo del AlertDialog de Dar de Baja leyendo desde el estado
             if (uiState.inquilinoDarDeBaja != null) {
                 AlertDialog(
                     onDismissRequest = { viewModel.seleccionarInquilinoParaBaja(null) },
@@ -781,7 +769,6 @@ fun InquilinoCard(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
             if (!inquilino.fotografia.isNullOrBlank()) {
                 val bytes = remember(inquilino.fotografia) { Base64.decode(inquilino.fotografia, Base64.DEFAULT) }
                 AsyncImage(

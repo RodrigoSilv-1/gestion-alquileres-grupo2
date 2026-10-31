@@ -161,7 +161,6 @@ fun ListaContratosActivos(
                         Text(text = "Inquilino: ${contrato.nombreInquilino}", fontWeight = FontWeight.Bold)
                         Text(text = "DNI: ${contrato.dniInquilino}")
                         Spacer(modifier = Modifier.height(6.dp))
-                        HorizontalDivider()
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(text = "Inmueble: ${contrato.direccionInmueble} (${contrato.distritoInmueble})")
                         Text(text = "Unidad: ${contrato.nombreUnidad}")
