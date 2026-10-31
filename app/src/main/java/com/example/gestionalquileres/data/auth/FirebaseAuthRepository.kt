@@ -1,5 +1,6 @@
 package com.example.gestionalquileres.data.auth
 
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 import com.google.firebase.auth.FirebaseAuth
@@ -19,12 +20,12 @@ class FirebaseAuthRepository @Inject constructor(
         email: String,
         password: String,
         role: UserRole
-    ): Result<AppUser> {
+    ): AppResult<AppUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
 
             val firebaseUser = result.user
-                ?: return Result.failure(Exception("No se pudo crear el usuario."))
+                ?: return AppResult.Error(Exception("No se pudo crear el usuario."))
 
             val appUser = AppUser(
                 uid = firebaseUser.uid,
@@ -38,34 +39,34 @@ class FirebaseAuthRepository @Inject constructor(
                 .set(appUser)
                 .await()
 
-            Result.success(appUser)
+            AppResult.Exito(appUser)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 
     override suspend fun login(
         email: String,
         password: String
-    ): Result<AppUser> {
+    ): AppResult<AppUser> {
         return try {
             auth.signInWithEmailAndPassword(email, password).await()
             getCurrentUser()
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
     override suspend fun signInWithGoogle(
         idToken: String,
         role: UserRole
-    ): Result<AppUser> {
+    ): AppResult<AppUser> {
         return try {
             val credential = GoogleAuthProvider.getCredential(idToken, null)
 
             val result = auth.signInWithCredential(credential).await()
 
             val firebaseUser = result.user
-                ?: return Result.failure(Exception("No se pudo iniciar sesión con Google."))
+                ?: return AppResult.Error(Exception("No se pudo iniciar sesión con Google."))
 
             val userDocument = firestore.collection("users")
                 .document(firebaseUser.uid)
@@ -76,10 +77,10 @@ class FirebaseAuthRepository @Inject constructor(
             if (existingUser != null) {
                 if (!existingUser.active) {
                     auth.signOut()
-                    return Result.failure(Exception("Tu usuario está desactivado."))
+                    return AppResult.Error(Exception("Tu usuario está desactivado."))
                 }
 
-                return Result.success(existingUser)
+                return AppResult.Exito(existingUser)
             }
 
             val newUser = AppUser(
@@ -91,15 +92,15 @@ class FirebaseAuthRepository @Inject constructor(
 
             userDocument.set(newUser).await()
 
-            Result.success(newUser)
+            AppResult.Exito(newUser)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
-    override suspend fun getCurrentUser(): Result<AppUser> {
+    override suspend fun getCurrentUser(): AppResult<AppUser> {
         return try {
             val firebaseUser = auth.currentUser
-                ?: return Result.failure(Exception("No hay una sesión activa."))
+                ?: return AppResult.Error(Exception("No hay una sesión activa."))
 
             val document = firestore.collection("users")
                 .document(firebaseUser.uid)
@@ -107,16 +108,16 @@ class FirebaseAuthRepository @Inject constructor(
                 .await()
 
             val appUser = document.toObject(AppUser::class.java)
-                ?: return Result.failure(Exception("No se encontró el perfil del usuario."))
+                ?: return AppResult.Error(Exception("No se encontró el perfil del usuario."))
 
             if (!appUser.active) {
                 auth.signOut()
-                return Result.failure(Exception("Tu usuario está desactivado."))
+                return AppResult.Error(Exception("Tu usuario está desactivado."))
             }
 
-            Result.success(appUser)
+            AppResult.Exito(appUser)
         } catch (error: Exception) {
-            Result.failure(error)
+            AppResult.Error(error)
         }
     }
 

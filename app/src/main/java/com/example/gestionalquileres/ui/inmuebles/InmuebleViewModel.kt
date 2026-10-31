@@ -2,22 +2,27 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gestionalquileres.domain.model.onSuccess
+import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.data.auth.repository.InmuebleRepository
-import com.example.gestionalquileres.data.repository.InquilinoRepository
+import com.example.gestionalquileres.data.auth.repository.InquilinoRepository
+import com.example.gestionalquileres.data.auth.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.domain.model.Inmueble
+import dagger.hilt.android.lifecycle.HiltViewModel
 import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.ui.inquilinos.InquilinoUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@HiltViewModel
+class InmuebleViewModel @Inject constructor(
+    private val repository: InmuebleRepository,
+    private val unidadRepository: UnidadAlquilableRepository // <-- Repositorio inyectado correctamente por Hilt
+) : ViewModel() {
 
-class InmuebleViewModel : ViewModel() {
-
-    private val repository = InmuebleRepository()
-
-    // Estado principal expuesto a la interfaz
     private val _uiState = MutableStateFlow(InmuebleUiState())
     val uiState: StateFlow<InmuebleUiState> = _uiState.asStateFlow()
 
@@ -34,7 +39,8 @@ class InmuebleViewModel : ViewModel() {
         }
     }
 
-    // Consulta en Firestore todos los inmuebles activos
+    // --- FUNCIONES DE LECTURA ---
+
     fun obtenerTodos() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -59,7 +65,6 @@ class InmuebleViewModel : ViewModel() {
         }
     }
 
-    // Busca inmuebles activos por código postal
     fun obtenerPorCodigoPostal(codigoPostal: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -109,7 +114,6 @@ class InmuebleViewModel : ViewModel() {
         }
     }
 
-    // Actualiza los datos de un inmueble existente y recarga la lista
     fun actualizar(inmueble: Inmueble) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -137,7 +141,6 @@ class InmuebleViewModel : ViewModel() {
         }
     }
 
-    // Aplica baja lógica y actualiza la lista en pantalla
     fun darDeBaja(idInmueble: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -212,6 +215,48 @@ class InmuebleViewModel : ViewModel() {
         }
     }
 
+    // Actualiza el texto del número de pisos en el estado
+    fun onNumeroPisosChanged(numero: String) {
+        _uiState.value = _uiState.value.copy(numeroPisos = numero)
+    }
+
+    // Actualiza el texto de las unidades por piso en el estado
+    fun onUnidadesPorPisoChanged(unidades: String) {
+        _uiState.value = _uiState.value.copy(unidadesPorPiso = unidades)
+    }
+
+    // Consulta las unidades alquilables de un inmueble específico usando su subcolección
+    fun obtenerUnidadesPorInmueble(inmuebleId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            // Ya no instanciamos manualmente, usamos la variable inyectada arriba
+            unidadRepository.obtenerUnidadesPorInmueble(inmuebleId)
+                .onSuccess { listaUnidades ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        unidadesAlquilables = listaUnidades
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "No se pudieron obtener las unidades alquilables."
+                    )
+                }
+        }
+    }
+
+    fun actualizarPrecioUnidad(inmuebleId: String, unidadId: String, nuevoPrecio: Double) {
+        viewModelScope.launch {
+            // Ya no instanciamos manualmente, usamos la variable inyectada arriba
+            unidadRepository.actualizarPrecioRenta(inmuebleId, unidadId, nuevoPrecio)
+                .onSuccess {
+                    obtenerUnidadesPorInmueble(inmuebleId) // Refresca la lista
+                }
+        }
+    }
+
     // Cierra el dialogo de reactivación si el usuario cancela
     fun cancelarReactivacion() {
         _uiState.value = _uiState.value.copy(
@@ -229,9 +274,31 @@ class InmuebleViewModel : ViewModel() {
     }
 
     // Quita la selección del inmueble actual
-    fun limpiarInquilinoSeleccionado() {
+    fun limpiarInmuebleSeleccionado() {
         _uiState.value = _uiState.value.copy(
             inmuebleSeleccionado = null
         )
+    }
+
+    // --- FUNCIONES DE ESTADO DE LA INTERFAZ (UI STATE) ---
+
+    fun mostrarFormularioRegistro(mostrar: Boolean) {
+        _uiState.value = _uiState.value.copy(mostrandoFormularioRegistro = mostrar)
+    }
+
+    fun seleccionarInmuebleParaEditar(inmueble: Inmueble?) {
+        _uiState.value = _uiState.value.copy(inmuebleSeleccionado = inmueble)
+    }
+
+    fun seleccionarInmuebleParaBaja(inmueble: Inmueble?) {
+        _uiState.value = _uiState.value.copy(inmuebleDarDeBaja = inmueble)
+    }
+
+    fun actualizarTipoBusqueda(tipo: String) {
+        _uiState.value = _uiState.value.copy(tipoBusqueda = tipo)
+    }
+
+    fun actualizarTextoBusqueda(texto: String) {
+        _uiState.value = _uiState.value.copy(textoBusqueda = texto)
     }
 }

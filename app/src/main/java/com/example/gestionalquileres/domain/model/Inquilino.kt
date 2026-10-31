@@ -8,5 +8,6 @@ data class Inquilino(
     val edad: Int = 0,
     val sexo: String = "",
     val fotografia: String? = null,
-    val active: Boolean = true
+    val active: Boolean = true,
+    val sueldo: Double = 0.0 // <-- NUEVO: Indispensable para la evaluación de solvencia
 )

@@ -7,6 +7,7 @@ data class Inmueble(
     val numeroDireccion: String = "",
     val codigoPostal: String = "",
     val numeroPisos: Int = 0,
+    val unidadesPorPiso: Int = 0,
     val fotografia: String? = null,
     val active: Boolean = true
 )

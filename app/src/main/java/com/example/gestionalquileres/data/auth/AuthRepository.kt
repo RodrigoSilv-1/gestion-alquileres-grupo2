@@ -1,5 +1,6 @@
 package com.example.gestionalquileres.data.auth
 
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 
@@ -10,18 +11,18 @@ interface AuthRepository {
         email: String,
         password: String,
         role: UserRole
-    ): Result<AppUser>
+    ): AppResult<AppUser>
 
     suspend fun login(
         email: String,
         password: String
-    ): Result<AppUser>
+    ): AppResult<AppUser>
 
     suspend fun signInWithGoogle(
         idToken: String,
         role: UserRole
-    ): Result<AppUser>
-    suspend fun getCurrentUser(): Result<AppUser>
+    ): AppResult<AppUser>
+    suspend fun getCurrentUser(): AppResult<AppUser>
 
     fun logout()
 
