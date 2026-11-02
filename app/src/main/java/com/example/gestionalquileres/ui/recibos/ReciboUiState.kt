@@ -15,9 +15,9 @@ data class ReciboUiState(
 
     // Controles de navegación y formularios
     val mostrandoFormularioRegistro: Boolean = false,
-    val reciboSeleccionado: Recibo? = null,
+    //val reciboSeleccionado: Recibo? = null,
 
     // Búsqueda y filtros (Estándar de tu app)
-    val tipoBusqueda: String = "Número", // Puede ser "Número" o "Contrato"
+    //val tipoBusqueda: String = "Número", // Puede ser "Número" o "Contrato"
     val textoBusqueda: String = ""
 )
