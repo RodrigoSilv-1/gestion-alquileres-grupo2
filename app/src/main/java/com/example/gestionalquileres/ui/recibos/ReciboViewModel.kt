@@ -2,8 +2,8 @@ package com.example.gestionalquileres.ui.recibos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.repository.ContratoRepository
-import com.example.gestionalquileres.data.repository.ReciboRepository
+import com.example.gestionalquileres.domain.repository.ContratoRepository
+import com.example.gestionalquileres.domain.repository.ReciboRepository
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.Recibo

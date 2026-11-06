@@ -1,6 +1,7 @@
 package com.example.gestionalquileres.data.repository
 
 import com.example.gestionalquileres.domain.model.AppResult
+import com.example.gestionalquileres.domain.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
@@ -8,23 +9,23 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class UnidadAlquilableRepository @Inject constructor(
+class FirestoreUnidadAlquilableRepository @Inject constructor(
     private val firestore: FirebaseFirestore
-) {
+) : UnidadAlquilableRepository {
 
     private fun unidades(inmuebleId: String): CollectionReference =
         firestore.collection("inmuebles")
             .document(inmuebleId)
             .collection("unidadesAlquilables")
 
-    suspend fun obtenerUnidadesPorInmueble(inmuebleId: String): AppResult<List<UnidadAlquilable>> =
+    override suspend fun obtenerUnidadesPorInmueble(inmuebleId: String): AppResult<List<UnidadAlquilable>> =
         appResultOf {
             unidades(inmuebleId).get().await().documents.mapNotNull { doc ->
                 doc.toObject(UnidadAlquilable::class.java)?.copy(id = doc.id)
             }
         }
 
-    suspend fun tieneUnidadesOcupadas(inmuebleId: String): AppResult<Boolean> =
+    override suspend fun tieneUnidadesOcupadas(inmuebleId: String): AppResult<Boolean> =
         appResultOf {
             !unidades(inmuebleId)
                 .whereEqualTo("estaOcupada", true)
@@ -34,7 +35,7 @@ class UnidadAlquilableRepository @Inject constructor(
                 .isEmpty
         }
 
-    suspend fun actualizarPrecioRenta(
+    override suspend fun actualizarPrecioRenta(
         inmuebleId: String,
         unidadId: String,
         nuevoPrecio: Double

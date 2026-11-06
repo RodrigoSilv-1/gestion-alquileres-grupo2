@@ -1,18 +1,19 @@
 package com.example.gestionalquileres.data.repository
 
 import com.example.gestionalquileres.domain.model.AppResult
+import com.example.gestionalquileres.domain.repository.ReciboRepository
 import com.example.gestionalquileres.domain.model.Recibo
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class ReciboRepository @Inject constructor(
+class FirestoreReciboRepository @Inject constructor(
     private val firestore: FirebaseFirestore
-) {
+) : ReciboRepository {
     private val recibosCollection = firestore.collection("recibos")
     private val contadorRef = firestore.collection("contadores").document("recibos")
 
-    suspend fun generarYGuardarRecibo(reciboParcial: Recibo): AppResult<Recibo> {
+    override suspend fun generarYGuardarRecibo(reciboParcial: Recibo): AppResult<Recibo> {
         return try {
             val nuevoReciboRef = recibosCollection.document()
             var reciboFinal: Recibo? = null
@@ -52,7 +53,7 @@ class ReciboRepository @Inject constructor(
     }
 
     // Trae el historial de recibos generados
-    suspend fun obtenerTodosLosRecibos(): AppResult<List<Recibo>> {
+    override suspend fun obtenerTodosLosRecibos(): AppResult<List<Recibo>> {
         return try {
             val snapshot = recibosCollection.get().await()
             val listaRecibos = snapshot.documents.mapNotNull { doc ->

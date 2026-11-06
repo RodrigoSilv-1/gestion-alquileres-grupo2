@@ -2,10 +2,10 @@ package com.example.gestionalquileres.ui.contrato
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.repository.ContratoRepository
-import com.example.gestionalquileres.data.repository.InmuebleRepository
-import com.example.gestionalquileres.data.repository.InquilinoRepository
-import com.example.gestionalquileres.data.repository.UnidadAlquilableRepository
+import com.example.gestionalquileres.domain.repository.ContratoRepository
+import com.example.gestionalquileres.domain.repository.InmuebleRepository
+import com.example.gestionalquileres.domain.repository.InquilinoRepository
+import com.example.gestionalquileres.domain.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.domain.comoMonto
 import com.example.gestionalquileres.domain.cumpleSolvencia
 import com.example.gestionalquileres.domain.ingresoMinimoRequerido

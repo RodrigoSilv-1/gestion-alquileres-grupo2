@@ -1,6 +1,7 @@
 package com.example.gestionalquileres.data.repository
 
 import com.example.gestionalquileres.domain.model.AppResult
+import com.example.gestionalquileres.domain.repository.InmuebleRepository
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
 import com.google.firebase.firestore.FirebaseFirestore
@@ -10,9 +11,9 @@ import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class InmuebleRepository @Inject constructor(
+class FirestoreInmuebleRepository @Inject constructor(
     private val firestore: FirebaseFirestore
-) {
+) : InmuebleRepository {
 
     private val collection = firestore.collection(COLECCION)
 
@@ -21,7 +22,7 @@ class InmuebleRepository @Inject constructor(
      * así el registro es atómico: o se guarda todo o no se guarda nada.
      * Máximo: 1 inmueble + 400 unidades = 401 escrituras (el límite de Firestore es 500).
      */
-    suspend fun registrar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
+    override suspend fun registrar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
         require(inmueble.numeroPisos > 0 && inmueble.unidadesPorPiso > 0) {
             "Debe haber al menos 1 piso y 1 unidad por piso."
         }
@@ -58,24 +59,24 @@ class InmuebleRepository @Inject constructor(
 
     // ---------- Lecturas (solo inmuebles activos) ----------
 
-    suspend fun obtenerTodos(): AppResult<List<Inmueble>> =
+    override suspend fun obtenerTodos(): AppResult<List<Inmueble>> =
         consultar(collection.whereEqualTo("active", true))
 
     // ---------- Escrituras ----------
 
-    suspend fun actualizar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
+    override suspend fun actualizar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
         require(inmueble.idInmueble.isNotBlank()) { "El ID del inmueble es obligatorio." }
         collection.document(inmueble.idInmueble).set(inmueble).await()
         inmueble
     }
 
-    suspend fun darDeBaja(idInmueble: String): AppResult<Unit> = appResultOf {
+    override suspend fun darDeBaja(idInmueble: String): AppResult<Unit> = appResultOf {
         require(idInmueble.isNotBlank()) { "El ID del inmueble es obligatorio." }
         collection.document(idInmueble).update("active", false).await()
         Unit
     }
 
-    suspend fun reactivarYActualizar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
+    override suspend fun reactivarYActualizar(inmueble: Inmueble): AppResult<Inmueble> = appResultOf {
         require(inmueble.idInmueble.isNotBlank()) { "El ID del inmueble es obligatorio." }
         val reactivado = inmueble.copy(active = true)
         collection.document(reactivado.idInmueble).set(reactivado).await()

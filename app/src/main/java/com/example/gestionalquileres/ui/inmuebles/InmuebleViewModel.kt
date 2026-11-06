@@ -2,8 +2,8 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.repository.InmuebleRepository
-import com.example.gestionalquileres.data.repository.UnidadAlquilableRepository
+import com.example.gestionalquileres.domain.repository.InmuebleRepository
+import com.example.gestionalquileres.domain.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable

@@ -1,18 +1,19 @@
 package com.example.gestionalquileres.data.repository
 
 import com.example.gestionalquileres.domain.model.AppResult
+import com.example.gestionalquileres.domain.repository.ContratoRepository
 import com.example.gestionalquileres.domain.model.Contrato
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class ContratoRepository @Inject constructor(
+class FirestoreContratoRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val unidadRepository: UnidadAlquilableRepository
-) {
+    private val unidadRepository: FirestoreUnidadAlquilableRepository
+) : ContratoRepository {
     private val contratosCollection = firestore.collection("contratos")
 
-    suspend fun registrarContrato(contrato: Contrato): AppResult<Contrato> {
+    override suspend fun registrarContrato(contrato: Contrato): AppResult<Contrato> {
         return try {
             val documentoRef = contratosCollection.document()
             val contratoConId = contrato.copy(
@@ -40,7 +41,7 @@ class ContratoRepository @Inject constructor(
         }
     }
 
-    suspend fun obtenerContratosActivos(): AppResult<List<Contrato>> {
+    override suspend fun obtenerContratosActivos(): AppResult<List<Contrato>> {
         return try {
             val snapshot = contratosCollection
                 .whereEqualTo("active", true)
@@ -57,7 +58,7 @@ class ContratoRepository @Inject constructor(
         }
     }
 
-    suspend fun obtenerContratoActivoPorInquilino(inquilinoId: String): AppResult<Contrato?> {
+    override suspend fun obtenerContratoActivoPorInquilino(inquilinoId: String): AppResult<Contrato?> {
         return try {
             val snapshot = contratosCollection
                 .whereEqualTo("inquilinoId", inquilinoId)
@@ -73,7 +74,7 @@ class ContratoRepository @Inject constructor(
         }
     }
 
-    suspend fun finalizarContrato(idContrato: String, inmuebleId: String, unidadId: String): AppResult<Unit> {
+    override suspend fun finalizarContrato(idContrato: String, inmuebleId: String, unidadId: String): AppResult<Unit> {
         return try {
             if (idContrato.isBlank() || inmuebleId.isBlank() || unidadId.isBlank()) {
                 return AppResult.Error(Exception("Los identificadores son obligatorios para finalizar el contrato."))

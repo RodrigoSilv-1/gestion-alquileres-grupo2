@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inmueble
+import com.example.gestionalquileres.ui.common.CampoTexto
 import com.example.gestionalquileres.ui.common.FotoPicker
 
 @Composable
@@ -124,29 +125,4 @@ private fun InmuebleFormulario(
             }
         }
     }
-}
-
-@Composable
-private fun CampoTexto(
-    valor: String,
-    onCambio: (String) -> Unit,
-    etiqueta: String,
-    teclado: KeyboardType = KeyboardType.Text,
-    soloDigitos: Boolean = false,
-    enabled: Boolean = true,
-    esError: Boolean = false,
-    ayuda: String? = null
-) {
-    OutlinedTextField(
-        value = valor,
-        onValueChange = { onCambio(if (soloDigitos) it.filter(Char::isDigit) else it) },
-        label = { Text(etiqueta) },
-        enabled = enabled,
-        isError = esError,
-        supportingText = ayuda?.let { texto -> { Text(texto) } },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        keyboardOptions = KeyboardOptions(keyboardType = teclado),
-        modifier = Modifier.fillMaxWidth()
-    )
 }

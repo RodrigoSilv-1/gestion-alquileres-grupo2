@@ -8,7 +8,7 @@ import android.util.Base64
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
 
-/** Reduce la imagen a [maxDimension] px y la devuelve en Base64 (JPEG). Llamar fuera del hilo principal. */
+/** Reduce la imagen a [maxDimension] px y la devuelve en Base64 (JPEG). Se llama fuera del hilo principal. */
 fun uriABase64(
     context: Context,
     uri: Uri,
