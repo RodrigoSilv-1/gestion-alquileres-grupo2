@@ -11,8 +11,10 @@ data class Recibo(
     val luz: Double = 0.0,
     val ipc: Double = 0.0,
     val montoTotal: Double = 0.0,
-    val estadoPago: String = "Pendiente"
+    val estadoPago: String = EstadoPago.PENDIENTE.valor
 ) {
+    /** Estado tipado. En Firestore se sigue guardando el texto de [estadoPago]. */
+    fun estado(): EstadoPago = EstadoPago.desde(estadoPago)
     // CRITERIO 6: Generar una lista solo con los conceptos válidos (> 0) para la UI
     fun obtenerConceptosCobrar(): List<Pair<String, Double>> {
         val conceptos = mutableListOf<Pair<String, Double>>()

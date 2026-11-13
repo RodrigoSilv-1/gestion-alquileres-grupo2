@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import com.example.gestionalquileres.domain.SIMBOLO_MONEDA
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +45,7 @@ fun RegistrarInquilinoScreen(
     InquilinoFormulario(
         textoGuardar = "Guardar",
         form = form,
+        esNuevo = true,
         guardando = guardando,
         onGuardar = { onGuardar(form.toInquilino()) },
         onCancelar = onCancelar
@@ -61,6 +63,7 @@ fun EditarInquilinoScreen(
     InquilinoFormulario(
         textoGuardar = "Guardar cambios",
         form = form,
+        esNuevo = false,
         guardando = guardando,
         onGuardar = { onGuardar(form.toInquilino(base = inquilino)) },
         onCancelar = onCancelar
@@ -71,6 +74,7 @@ fun EditarInquilinoScreen(
 private fun InquilinoFormulario(
     textoGuardar: String,
     form: InquilinoFormState,
+    esNuevo: Boolean,
     guardando: Boolean,
     onGuardar: () -> Unit,
     onCancelar: () -> Unit
@@ -82,11 +86,32 @@ private fun InquilinoFormulario(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CampoTexto(form.nombre, { form.nombre = it }, "Nombre")
-        CampoTexto(form.dni, { form.dni = it }, "DNI")
-        CampoTexto(form.telefono, { form.telefono = it }, "Teléfono", KeyboardType.Phone)
-        CampoTexto(form.edad, { form.edad = it }, "Edad", KeyboardType.Number, soloDigitos = true)
-        CampoTexto(form.sueldo, { form.sueldo = it }, "Sueldo Mensual ($)", KeyboardType.Number)
+        CampoTexto(
+            form.nombre, { form.nombre = it }, "Nombre completo",
+            esError = form.errorNombre != null, ayuda = form.errorNombre
+        )
+        CampoTexto(
+            form.dni, { form.dni = it.take(LARGO_DNI) }, "DNI",
+            KeyboardType.Number, soloDigitos = true, enabled = esNuevo,
+            esError = form.errorDni != null,
+            ayuda = form.errorDni ?: if (!esNuevo) "El DNI no se puede modificar." else null
+        )
+        CampoTexto(
+            form.telefono, { form.telefono = it.take(LARGO_TELEFONO) }, "Celular",
+            KeyboardType.Phone, soloDigitos = true,
+            esError = form.errorTelefono != null, ayuda = form.errorTelefono
+        )
+        CampoTexto(
+            form.edad, { form.edad = it.take(2) }, "Edad",
+            KeyboardType.Number, soloDigitos = true,
+            esError = form.errorEdad != null, ayuda = form.errorEdad
+        )
+        CampoTexto(
+            form.sueldo, { form.sueldo = limpiarMonto(it) }, "Sueldo Mensual ($SIMBOLO_MONEDA)",
+            KeyboardType.Decimal,
+            esError = form.errorSueldo != null,
+            ayuda = form.errorSueldo ?: "Se usa para evaluar la solvencia (debe ser al menos el doble de la renta)."
+        )
         SelectorSexo(valor = form.sexo, onSeleccionar = { form.sexo = it })
 
         Spacer(Modifier.height(8.dp))
@@ -101,7 +126,7 @@ private fun InquilinoFormulario(
             }
             Button(
                 onClick = onGuardar,
-                enabled = form.esValido && !guardando,
+                enabled = form.esValido(esNuevo) && !guardando,
                 modifier = Modifier.weight(1f)
             ) {
                 if (guardando) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)

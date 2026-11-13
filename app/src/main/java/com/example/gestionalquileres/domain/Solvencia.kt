@@ -9,6 +9,3 @@ fun ingresoMinimoRequerido(renta: Double): Double = renta * FACTOR_SOLVENCIA
 /** True si [ingreso] cubre el mínimo requerido para la [renta] dada. */
 fun cumpleSolvencia(ingreso: Double, renta: Double): Boolean =
     ingreso >= ingresoMinimoRequerido(renta)
-
-/** Formatea un monto con 2 decimales y símbolo: 1500.0 -> "$1500.00". */
-fun Double.comoMonto(): String = "\$%.2f".format(this)

@@ -161,6 +161,14 @@ class ContratoViewModel @Inject constructor(
             )
         }
 
+        if (inquilino.sueldo <= 0.0) {
+            return copy(
+                esSolvente = false,
+                mensajeSolvencia = "Solvencia Rechazada: ${inquilino.nombre} no tiene un sueldo registrado. " +
+                        "Actualiza sus datos en el módulo Inquilinos."
+            )
+        }
+
         val sueldo = inquilino.sueldo
         val minimo = ingresoMinimoRequerido(renta)
         val esApto = cumpleSolvencia(sueldo, renta)

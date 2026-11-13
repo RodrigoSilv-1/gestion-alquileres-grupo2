@@ -35,6 +35,7 @@ class InmuebleFormState(inmueble: Inmueble? = null) {
     fun esValido(esNuevo: Boolean): Boolean =
         distrito.isNotBlank() &&
                 direccion.isNotBlank() &&
+                numeroDireccion.isNotBlank() &&
                 codigoPostal.isNotBlank() &&
                 (!esNuevo || (
                         (numeroPisos.toIntOrNull() ?: 0) > 0 &&

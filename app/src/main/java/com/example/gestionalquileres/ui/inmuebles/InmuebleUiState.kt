@@ -2,6 +2,7 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
+import com.example.gestionalquileres.domain.normalizarBusqueda
 
 enum class TipoBusqueda(val etiqueta: String) {
     DISTRITO("Distrito"),
@@ -35,10 +36,14 @@ data class InmuebleUiState(
 ) {
     /** Lista que se muestra: `inmuebles` (completa) filtrada en memoria, sin consultar Firestore. */
     val inmueblesVisibles: List<Inmueble>
-        get() = when {
-            filtroAplicado.isBlank() -> inmuebles
-            tipoFiltroAplicado == TipoBusqueda.DISTRITO ->
-                inmuebles.filter { it.distrito.contains(filtroAplicado, ignoreCase = true) }
-            else -> inmuebles.filter { it.codigoPostal == filtroAplicado }
+        get() {
+            val consulta = filtroAplicado.normalizarBusqueda()
+            return when {
+                consulta.isEmpty() -> inmuebles
+                tipoFiltroAplicado == TipoBusqueda.DISTRITO ->
+                    inmuebles.filter { it.distrito.normalizarBusqueda().contains(consulta) }
+                else ->
+                    inmuebles.filter { it.codigoPostal.normalizarBusqueda().contains(consulta) }
+            }
         }
 }

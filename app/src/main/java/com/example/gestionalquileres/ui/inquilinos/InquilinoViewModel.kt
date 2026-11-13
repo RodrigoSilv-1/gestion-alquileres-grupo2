@@ -3,6 +3,7 @@ package com.example.gestionalquileres.ui.inquilinos
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionalquileres.domain.repository.InquilinoRepository
+import com.example.gestionalquileres.domain.repository.ContratoRepository
 import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InquilinoViewModel @Inject constructor(
-    private val repository: InquilinoRepository
+    private val repository: InquilinoRepository,
+    private val contratoRepository: ContratoRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InquilinoUiState())
@@ -136,15 +138,17 @@ class InquilinoViewModel @Inject constructor(
             iniciarOperacion()
 
             repository.actualizar(inquilino)
-                .onSuccess { _ ->
-                    _uiState.update {
-                        it.copy(
+                .onSuccess { actualizado ->
+                    _uiState.update { estado ->
+                        estado.copy(
                             isLoading = false,
+                            inquilinos = estado.inquilinos.map {
+                                if (it.idInquilino == actualizado.idInquilino) actualizado else it
+                            },
                             successMessage = "Datos del inquilino actualizados correctamente.",
                             inquilinoSeleccionado = null
                         )
                     }
-                    obtenerTodos()
                 }
                 .onFailure { error -> mostrarError(error, "No se pudo actualizar el inquilino.") }
         }
@@ -154,18 +158,20 @@ class InquilinoViewModel @Inject constructor(
         viewModelScope.launch {
             iniciarOperacion()
 
-            repository.darDeBaja(idInquilino)
-                .onSuccess { _ ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            successMessage = "Inquilino dado de baja correctamente.",
-                            inquilinoDarDeBaja = null
-                        )
-                    }
-                    obtenerTodos()
+            contratoRepository.obtenerContratoActivoPorInquilino(idInquilino)
+                .onFailure { error ->
+                    bajaRechazada(error.message ?: "No se pudo verificar los contratos del inquilino.")
                 }
-                .onFailure { error -> mostrarError(error, "No se pudo dar de baja al inquilino.") }
+                .onSuccess { contratoActivo ->
+                    if (contratoActivo != null) {
+                        bajaRechazada(
+                            "No se puede dar de baja: el inquilino tiene un contrato vigente " +
+                                    "en la unidad ${contratoActivo.nombreUnidad}. Finaliza primero el contrato."
+                        )
+                    } else {
+                        ejecutarBaja(idInquilino)
+                    }
+                }
         }
     }
 
@@ -191,4 +197,24 @@ class InquilinoViewModel @Inject constructor(
 
     private fun mostrarError(error: Exception, mensajePorDefecto: String) =
         _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: mensajePorDefecto) }
+
+    private suspend fun ejecutarBaja(idInquilino: String) {
+        repository.darDeBaja(idInquilino)
+            .onSuccess {
+                _uiState.update { estado ->
+                    estado.copy(
+                        isLoading = false,
+                        inquilinos = estado.inquilinos.filter { it.idInquilino != idInquilino },
+                        successMessage = "Inquilino dado de baja correctamente.",
+                        inquilinoDarDeBaja = null
+                    )
+                }
+            }
+            .onFailure { error -> bajaRechazada(error.message ?: "No se pudo dar de baja al inquilino.") }
+    }
+
+    /** Cierra el diálogo de baja y muestra el motivo en el Snackbar. */
+    private fun bajaRechazada(mensaje: String) {
+        _uiState.update { it.copy(isLoading = false, inquilinoDarDeBaja = null, errorMessage = mensaje) }
+    }
 }

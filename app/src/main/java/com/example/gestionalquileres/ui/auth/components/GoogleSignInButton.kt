@@ -14,15 +14,13 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import com.example.gestionalquileres.R
-import com.example.gestionalquileres.domain.model.UserRole
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
 
 @Composable
 fun GoogleSignInButton(
-    role: UserRole,
-    onGoogleToken: (String, UserRole) -> Unit,
+    onGoogleToken: (String) -> Unit,
     onGoogleError: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -59,10 +57,7 @@ fun GoogleSignInButton(
                         val googleCredential =
                             GoogleIdTokenCredential.createFrom(credential.data)
 
-                        onGoogleToken(
-                            googleCredential.idToken,
-                            role
-                        )
+                        onGoogleToken(googleCredential.idToken)
                     } else {
                         onGoogleError("No se pudo obtener una cuenta de Google.")
                     }

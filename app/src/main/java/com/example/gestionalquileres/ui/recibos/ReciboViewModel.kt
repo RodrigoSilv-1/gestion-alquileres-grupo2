@@ -12,9 +12,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.gestionalquileres.domain.calcularIgv
+import com.example.gestionalquileres.domain.comoMontoOCero
+import com.example.gestionalquileres.domain.model.EstadoPago
+import com.example.gestionalquileres.domain.redondearMonto
+import com.example.gestionalquileres.domain.sumarMontos
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -58,19 +61,18 @@ class ReciboViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            // 1. Manejo seguro de campos vacíos (se vuelven 0.0) - Criterio 5
-            val agua = inputAgua.toDoubleOrNull() ?: 0.0
-            val luz = inputLuz.toDoubleOrNull() ?: 0.0
-            val ipc = inputIpc.toDoubleOrNull() ?: 0.0
-            val renta = contratoSeleccionado.precioRentaAcordado
+            // 1. Campos vacíos o inválidos se vuelven 0.0; acepta "12,5" y "12.5"
+            val agua = inputAgua.comoMontoOCero()
+            val luz = inputLuz.comoMontoOCero()
+            val ipc = inputIpc.comoMontoOCero()
+            val renta = contratoSeleccionado.precioRentaAcordado.redondearMonto()
 
-            // 2. Cálculos (Criterio 4)
-            val igv = renta * 0.18
-            val total = renta + igv + agua + luz + ipc
+            // 2. Cálculos con BigDecimal, siempre a 2 decimales
+            val igv = calcularIgv(renta)
+            val total = sumarMontos(renta, igv, agua, luz, ipc)
 
-            // 3. Capturar fecha del sistema (Criterio 3)
-            val formatoFecha = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val fechaHoy = formatoFecha.format(Date())
+            // 3. Fecha del sistema en formato yyyy-MM-dd (igual que antes, sin depender del idioma del teléfono)
+            val fechaHoy = LocalDate.now().toString()
 
             val reciboParcial = Recibo(
                 idContrato = contratoSeleccionado.idContrato,
@@ -81,7 +83,7 @@ class ReciboViewModel @Inject constructor(
                 luz = luz,
                 ipc = ipc,
                 montoTotal = total,
-                estadoPago = "Pendiente"
+                estadoPago = EstadoPago.PENDIENTE.valor
             )
 
             // 4. Delegar al repositorio para crear el correlativo y guardar

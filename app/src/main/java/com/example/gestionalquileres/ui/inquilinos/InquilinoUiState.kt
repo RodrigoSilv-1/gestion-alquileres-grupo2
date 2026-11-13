@@ -1,6 +1,7 @@
 package com.example.gestionalquileres.ui.inquilinos
 
 import com.example.gestionalquileres.domain.model.Inquilino
+import com.example.gestionalquileres.domain.normalizarBusqueda
 
 enum class TipoBusquedaInquilino(val etiqueta: String) {
     NOMBRE("Nombre"),
@@ -29,10 +30,14 @@ data class InquilinoUiState(
 ) {
     /** Lista que se muestra: `inquilinos` (completa) filtrada en memoria. */
     val inquilinosVisibles: List<Inquilino>
-        get() = when {
-            filtroAplicado.isBlank() -> inquilinos
-            tipoFiltroAplicado == TipoBusquedaInquilino.NOMBRE ->
-                inquilinos.filter { it.nombre.contains(filtroAplicado, ignoreCase = true) }
-            else -> inquilinos.filter { it.dni == filtroAplicado }
+        get() {
+            val consulta = filtroAplicado.normalizarBusqueda()
+            return when {
+                consulta.isEmpty() -> inquilinos
+                tipoFiltroAplicado == TipoBusquedaInquilino.NOMBRE ->
+                    inquilinos.filter { it.nombre.normalizarBusqueda().contains(consulta) }
+                else ->
+                    inquilinos.filter { it.dni.contains(consulta) }
+            }
         }
 }

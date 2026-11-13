@@ -51,7 +51,7 @@ fun HomeScreen(
     var mostrarInquilinos by rememberSaveable { mutableStateOf(false) }
     var mostrarInmuebles by rememberSaveable { mutableStateOf(false) }
     var mostrarContratos by rememberSaveable { mutableStateOf(false) }
-    var mostrarRecibos by rememberSaveable { mutableStateOf(false) } // <-- NUEVO ESTADO DE NAVEGACIÓN
+    var mostrarRecibos by rememberSaveable { mutableStateOf(false) }
 
     if (mostrarInmuebles) {
         InmuebleScreen(

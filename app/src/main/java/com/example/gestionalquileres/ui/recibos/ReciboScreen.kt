@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import com.example.gestionalquileres.domain.comoMonto
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -35,6 +36,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import com.example.gestionalquileres.domain.model.EstadoPago
+import com.example.gestionalquileres.ui.inquilinos.limpiarMonto
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -224,7 +227,7 @@ fun RegistrarReciboScreen(
 
         // Campo de Renta Base (Bloqueado)
         OutlinedTextField(
-            value = formState.contratoSeleccionado?.precioRentaAcordado?.toString() ?: "0.0",
+            value = (formState.contratoSeleccionado?.precioRentaAcordado ?: 0.0).comoMonto(),
             onValueChange = {},
             label = { Text("Renta Base Acordada (Fija)") },
             readOnly = true,
@@ -238,7 +241,7 @@ fun RegistrarReciboScreen(
         // Campos variables utilizando el estado unificado con `.copy(...)`
         OutlinedTextField(
             value = formState.agua,
-            onValueChange = { formState = formState.copy(agua = it) },
+            onValueChange = { formState = formState.copy(agua = limpiarMonto(it)) },
             label = { Text("Agua") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -246,7 +249,7 @@ fun RegistrarReciboScreen(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = formState.luz,
-            onValueChange = { formState = formState.copy(luz = it) },
+            onValueChange = { formState = formState.copy(luz = limpiarMonto(it)) },
             label = { Text("Luz") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -254,7 +257,7 @@ fun RegistrarReciboScreen(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = formState.ipc,
-            onValueChange = { formState = formState.copy(ipc = it) },
+            onValueChange = { formState = formState.copy(ipc = limpiarMonto(it)) },
             label = { Text("IPC (Ajuste)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
@@ -307,7 +310,10 @@ fun ReciboCard(recibo: Recibo) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = recibo.numeroUnico, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                Text(text = recibo.estadoPago, color = if (recibo.estadoPago == "Pagado") Color(0xFF4CAF50) else Color(0xFFF44336))
+                Text(
+                    text = recibo.estado().valor,
+                    color = if (recibo.estado() == EstadoPago.PAGADO) Color(0xFF4CAF50) else Color(0xFFF44336)
+                )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Fecha Emisión: ${recibo.fechaEmision}", style = MaterialTheme.typography.bodyMedium)
@@ -321,7 +327,7 @@ fun ReciboCard(recibo: Recibo) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = concepto.first, style = MaterialTheme.typography.bodySmall)
-                    Text(text = "S/ ${concepto.second}", style = MaterialTheme.typography.bodySmall)
+                    Text(text = concepto.second.comoMonto(), style = MaterialTheme.typography.bodySmall)
                 }
             }
 
@@ -332,7 +338,7 @@ fun ReciboCard(recibo: Recibo) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "Total a Pagar:", fontWeight = FontWeight.Bold)
-                Text(text = "S/ ${recibo.montoTotal}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(text = recibo.montoTotal.comoMonto(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             }
         }
     }

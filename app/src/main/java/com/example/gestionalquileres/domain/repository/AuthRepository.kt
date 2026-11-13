@@ -10,7 +10,6 @@ interface AuthRepository {
     suspend fun register(
         email: String,
         password: String,
-        role: UserRole
     ): AppResult<AppUser>
 
     suspend fun login(
@@ -20,7 +19,6 @@ interface AuthRepository {
 
     suspend fun signInWithGoogle(
         idToken: String,
-        role: UserRole
     ): AppResult<AppUser>
     suspend fun getCurrentUser(): AppResult<AppUser>
 

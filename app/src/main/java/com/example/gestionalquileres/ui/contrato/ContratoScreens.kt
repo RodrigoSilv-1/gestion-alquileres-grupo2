@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -45,6 +47,7 @@ fun ContratoScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     var mostrarFormulario by rememberSaveable { mutableStateOf(false) }
+    var idContratoPorFinalizar by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { viewModel.cargarDatosIniciales() }
 
@@ -63,6 +66,36 @@ fun ContratoScreen(
         if (mostrarFormulario) mostrarFormulario = false else onVolver()
     }
     BackHandler(onBack = volver)
+
+    // Confirmación antes de finalizar: libera la unidad y no se puede deshacer
+    val contratoPorFinalizar = uiState.contratosActivos.firstOrNull { it.idContrato == idContratoPorFinalizar }
+    if (contratoPorFinalizar != null) {
+        AlertDialog(
+            onDismissRequest = { idContratoPorFinalizar = null },
+            title = { Text("Finalizar contrato") },
+            text = {
+                Text(
+                    "¿Finalizar el contrato de ${contratoPorFinalizar.nombreInquilino} en la unidad " +
+                            "${contratoPorFinalizar.nombreUnidad} (${contratoPorFinalizar.direccionInmueble})?\n\n" +
+                            "La unidad quedará disponible para un nuevo contrato. " +
+                            "Esta acción no se puede deshacer."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    idContratoPorFinalizar = null
+                    viewModel.finalizarContrato(
+                        idContrato = contratoPorFinalizar.idContrato,
+                        inmuebleId = contratoPorFinalizar.inmuebleId,
+                        unidadId = contratoPorFinalizar.unidadId
+                    )
+                }) { Text("Finalizar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { idContratoPorFinalizar = null }) { Text("Cancelar") }
+            }
+        )
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -105,13 +138,7 @@ fun ContratoScreen(
             } else {
                 ListaContratosActivos(
                     contratos = uiState.contratosActivos,
-                    onFinalizarContrato = { contrato ->
-                        viewModel.finalizarContrato(
-                            idContrato = contrato.idContrato,
-                            inmuebleId = contrato.inmuebleId,
-                            unidadId = contrato.unidadId
-                        )
-                    }
+                    onFinalizarContrato = {contrato -> idContratoPorFinalizar = contrato.idContrato}
                 )
             }
         }

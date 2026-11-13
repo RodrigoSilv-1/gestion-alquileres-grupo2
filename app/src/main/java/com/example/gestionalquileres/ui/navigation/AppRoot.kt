@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.LaunchedEffect
 import com.example.gestionalquileres.ui.auth.AuthViewModel
 import com.example.gestionalquileres.ui.auth.LoginScreen
 import com.example.gestionalquileres.ui.auth.RegisterScreen
@@ -31,6 +33,18 @@ fun AppRoot(
     val uiState by authViewModel.uiState.collectAsState()
     var showRegister by rememberSaveable { mutableStateOf(false) }
     val currentUser = uiState.currentUser
+
+    // Botón atrás del sistema: del registro vuelve al login
+    BackHandler(enabled = showRegister && currentUser == null && !uiState.isLoading) {
+        showRegister = false
+        authViewModel.clearError()
+    }
+
+    // Al iniciar sesión se limpia la bandera; si no, al cerrar sesión
+    // volvería a aparecer la pantalla de registro en lugar del login
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) showRegister = false
+    }
 
     when {
         uiState.isLoading -> LoadingScreen()

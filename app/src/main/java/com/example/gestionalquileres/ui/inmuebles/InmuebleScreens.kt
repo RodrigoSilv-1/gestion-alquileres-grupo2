@@ -27,6 +27,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -158,7 +159,17 @@ fun InmuebleScreen(
         AlertDialog(
             onDismissRequest = viewModel::cancelarReactivacion,
             title = { Text("Inmueble encontrado en el historial") },
-            text = { Text("Este inmueble fue dado de baja anteriormente.\n\n¿Deseas reactivarlo y actualizar sus datos?") },
+            text = {
+                Text(
+                    "Ya existe un inmueble dado de baja en ${inactivo.direccion} " +
+                            "${inactivo.numeroDireccion} (${inactivo.distrito}).\n\n" +
+                            "Se restaurará con sus ${inactivo.numeroPisos} pisos × " +
+                            "${inactivo.unidadesPorPiso} unidades y los precios que tenía. " +
+                            "La cantidad de pisos y unidades no se modifica; solo se actualizan " +
+                            "dirección, código postal y fotografía con lo que ingresaste.\n\n" +
+                            "¿Deseas reactivarlo?"
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { viewModel.reactivarInmueble(inactivo) }) { Text("Reactivar") }
             },
@@ -213,7 +224,7 @@ private fun ListadoInmuebles(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onBuscar) { Text("Buscar") }
-            Button(onClick = onMostrarTodos) { Text("Mostrar todos") }
+            OutlinedButton(onClick = onMostrarTodos) { Text("Mostrar todos") }
         }
 
         Spacer(Modifier.size(8.dp))

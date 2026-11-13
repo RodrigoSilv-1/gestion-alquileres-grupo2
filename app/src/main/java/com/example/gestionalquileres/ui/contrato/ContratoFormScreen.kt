@@ -71,7 +71,7 @@ fun FormularioContrato(
             onExpandedChange = { expandInquilino = !expandInquilino }
         ) {
             OutlinedTextField(
-                value = uiState.inquilinoSeleccionado?.let { "${it.nombre} (Sueldo: $${it.sueldo})" } ?: "Seleccionar Inquilino",
+                value = uiState.inquilinoSeleccionado?.let { "${it.nombre} (Sueldo: ${it.sueldo.comoMonto()})" } ?: "Seleccionar Inquilino",
                 onValueChange = {},
                 readOnly = true,
                 modifier = Modifier.fillMaxWidth().menuAnchor()
@@ -105,7 +105,7 @@ fun FormularioContrato(
             onExpandedChange = { expandUnidad = !expandUnidad }
         ) {
             val textoUnidad = if (uiState.unidadSeleccionada != null && uiState.inmuebleSeleccionado != null) {
-                "${uiState.inmuebleSeleccionado?.direccion} - ${uiState.unidadSeleccionada?.nombreFormateado} ($${uiState.unidadSeleccionada?.precioRenta})"
+                "${uiState.inmuebleSeleccionado?.direccion} - ${uiState.unidadSeleccionada?.nombreFormateado} (${uiState.unidadSeleccionada?.precioRenta?.comoMonto()})"
             } else {
                 "Seleccionar Unidad Disponible"
             }
@@ -128,7 +128,7 @@ fun FormularioContrato(
                 } else {
                     uiState.listaUnidadesDisponibles.forEach { (inmueble, unidad) ->
                         DropdownMenuItem(
-                            text = { Text("${inmueble.direccion} -> ${unidad.nombreFormateado} ($${unidad.precioRenta})") },
+                            text = { Text("${inmueble.direccion} -> ${unidad.nombreFormateado} (${unidad.precioRenta.comoMonto()})") },
                             onClick = {
                                 viewModel.seleccionarUnidad(inmueble, unidad)
                                 expandUnidad = false

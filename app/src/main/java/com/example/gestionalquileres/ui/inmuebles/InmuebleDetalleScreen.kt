@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import com.example.gestionalquileres.domain.SIMBOLO_MONEDA
+import com.example.gestionalquileres.domain.comoMonto
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
+import com.example.gestionalquileres.domain.redondearMonto
 
 @Composable
 fun DetalleInmuebleScreen(
@@ -99,7 +102,7 @@ private fun UnidadCard(unidad: UnidadAlquilable, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Renta: $${"%.2f".format(unidad.precioRenta)}",
+                    text = "Renta: ${unidad.precioRenta.comoMonto()}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -125,7 +128,7 @@ private fun EditarPrecioDialog(
     var texto by remember(unidad.id) {
         mutableStateOf(if (unidad.precioRenta > 0.0) unidad.precioRenta.toString() else "")
     }
-    val precio = texto.replace(',', '.').toDoubleOrNull()
+    val precio = texto.replace(',', '.').toDoubleOrNull()?.redondearMonto()
     val valido = precio != null && precio >= 0.0
 
     AlertDialog(
@@ -138,7 +141,7 @@ private fun EditarPrecioDialog(
                 OutlinedTextField(
                     value = texto,
                     onValueChange = { texto = it },
-                    label = { Text("Precio de Renta ($)") },
+                    label = { Text("Precio de Renta ($SIMBOLO_MONEDA)")},
                     singleLine = true,
                     isError = texto.isNotBlank() && !valido,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)

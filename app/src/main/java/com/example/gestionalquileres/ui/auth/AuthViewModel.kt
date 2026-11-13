@@ -25,12 +25,7 @@ class AuthViewModel @Inject constructor(
         loadActiveSession()
     }
 
-    fun register(
-        email: String,
-        password: String,
-        confirmPassword: String,
-        role: UserRole
-    ) {
+    fun register(email: String, password: String, confirmPassword: String) {
         when {
             email.trim().isEmpty() -> showError("Ingresa tu correo.")
             password.length < 6 -> showError("La contraseña debe tener al menos 6 caracteres.")
@@ -39,10 +34,8 @@ class AuthViewModel @Inject constructor(
                 viewModelScope.launch {
                     _uiState.value = AuthUiState(isLoading = true)
 
-                    repository.register(email.trim(), password, role)
-                        .onSuccess { user ->
-                            _uiState.value = AuthUiState(currentUser = user)
-                        }
+                    repository.register(email.trim(), password)
+                        .onSuccess { user -> _uiState.value = AuthUiState(currentUser = user) }
                         .onFailure { error ->
                             _uiState.value = AuthUiState(
                                 errorMessage = error.message ?: "No se pudo registrar el usuario."
@@ -74,21 +67,15 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
-    fun signInWithGoogle(
-        idToken: String,
-        role: UserRole
-    ) {
+    fun signInWithGoogle(idToken: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(isLoading = true)
 
-            repository.signInWithGoogle(idToken, role)
-                .onSuccess { user ->
-                    _uiState.value = AuthUiState(currentUser = user)
-                }
+            repository.signInWithGoogle(idToken)
+                .onSuccess { user -> _uiState.value = AuthUiState(currentUser = user) }
                 .onFailure { error ->
                     _uiState.value = AuthUiState(
-                        errorMessage = error.message
-                            ?: "No se pudo iniciar sesión con Google."
+                        errorMessage = error.message ?: "No se pudo iniciar sesión con Google."
                     )
                 }
         }

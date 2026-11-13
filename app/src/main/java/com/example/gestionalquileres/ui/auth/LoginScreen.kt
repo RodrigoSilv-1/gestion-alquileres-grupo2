@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -17,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.ui.auth.components.AuthBackground
 import com.example.gestionalquileres.ui.auth.components.AuthErrorMessage
 import com.example.gestionalquileres.ui.auth.components.AuthTextField
@@ -29,7 +30,7 @@ fun LoginScreen(
     onLogin: (String, String) -> Unit,
     onGoToRegister: () -> Unit,
     onClearError: () -> Unit,
-    onGoogleSignIn: (String, UserRole) -> Unit,
+    onGoogleSignIn: (String) -> Unit,
     onGoogleError: (String) -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
@@ -59,7 +60,9 @@ fun LoginScreen(
         AuthTextField(
             value = email,
             onValueChange = { email = it },
-            label = "Correo electrónico"
+            label = "Correo electrónico",
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next                 // Enter → pasa a contraseña
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -68,7 +71,9 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             label = "Contraseña",
-            isPassword = true
+            isPassword = true,
+            imeAction = ImeAction.Done,                // Enter → inicia sesión
+            onDone = { onLogin(email, password) }
         )
 
         AuthErrorMessage(
@@ -92,7 +97,6 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         GoogleSignInButton(
-            role = UserRole.ADMIN,
             onGoogleToken = onGoogleSignIn,
             onGoogleError = onGoogleError
         )

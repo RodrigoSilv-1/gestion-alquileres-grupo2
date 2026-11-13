@@ -7,6 +7,7 @@ import com.example.gestionalquileres.domain.repository.UnidadAlquilableRepositor
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
+import com.example.gestionalquileres.domain.model.claveDireccion
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,13 +60,8 @@ class InmuebleViewModel @Inject constructor(
 
     /** Filtra en memoria sobre `uiState.inmuebles`, que ya trae todos los activos. */
     fun buscar() {
-        val estado = _uiState.value
-        val texto = estado.textoBusqueda.trim()
-        if (texto.isBlank()) {
-            mostrarTodos()
-        } else {
-            _uiState.update { it.copy(filtroAplicado = texto, tipoFiltroAplicado = it.tipoBusqueda) }
-        }
+        val texto = _uiState.value.textoBusqueda.trim()
+        _uiState.update { it.copy(filtroAplicado = texto, tipoFiltroAplicado = it.tipoBusqueda) }
     }
 
     /** Limpia el filtro y recarga la lista completa desde Firestore. */
@@ -81,37 +77,88 @@ class InmuebleViewModel @Inject constructor(
     fun registrar(inmueble: Inmueble) {
         viewModelScope.launch {
             iniciarOperacion()
-            repository.registrar(inmueble)
-                .onSuccess { nuevo ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            inmuebles = it.inmuebles + nuevo,
-                            mostrandoFormularioRegistro = false,
-                            successMessage = "Inmueble registrado correctamente."
-                        )
+            repository.buscarPorDireccion(
+                inmueble.distrito, inmueble.direccion, inmueble.numeroDireccion
+            )
+                .onFailure { error -> fallo(error.message, "No se pudo verificar si el inmueble ya existe.") }
+                .onSuccess { existente ->
+                    when {
+                        existente == null -> registrarNuevo(inmueble)
+
+                        !existente.active -> _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                inmuebleInactivoDetectado = existente.conDatosDe(inmueble)
+                            )
+                        }
+
+                        else -> fallo(MENSAJE_DUPLICADO, MENSAJE_DUPLICADO)
                     }
                 }
-                .onFailure { error -> fallo(error.message, "No se pudo registrar el inmueble.") }
         }
     }
+
+    private suspend fun registrarNuevo(inmueble: Inmueble) {
+        repository.registrar(inmueble)
+            .onSuccess { nuevo ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        inmuebles = it.inmuebles + nuevo,
+                        mostrandoFormularioRegistro = false,
+                        successMessage = "Inmueble registrado correctamente."
+                    )
+                }
+            }
+            .onFailure { error -> fallo(error.message, "No se pudo registrar el inmueble.") }
+    }
+
+    private fun Inmueble.conDatosDe(nuevo: Inmueble) = copy(
+        distrito = nuevo.distrito,
+        direccion = nuevo.direccion,
+        numeroDireccion = nuevo.numeroDireccion,
+        codigoPostal = nuevo.codigoPostal,
+        fotografia = nuevo.fotografia ?: fotografia
+    )
 
     fun actualizar(inmueble: Inmueble) {
         viewModelScope.launch {
             iniciarOperacion()
-            repository.actualizar(inmueble)
-                .onSuccess { actualizado ->
-                    _uiState.update { estado ->
-                        estado.copy(
-                            isLoading = false,
-                            inmuebles = estado.inmuebles.map { if (it.idInmueble == actualizado.idInmueble) actualizado else it },
-                            inmuebleSeleccionado = null,
-                            successMessage = "Datos del inmueble actualizados correctamente."
-                        )
+
+            val original = _uiState.value.inmuebles.firstOrNull { it.idInmueble == inmueble.idInmueble }
+            if (original != null && original.claveDireccion == inmueble.claveDireccion) {
+                guardarCambios(inmueble)      // la dirección no cambió: no hay nada que validar
+                return@launch
+            }
+
+            repository.buscarPorDireccion(
+                inmueble.distrito, inmueble.direccion, inmueble.numeroDireccion,
+                excluirId = inmueble.idInmueble
+            )
+                .onFailure { error -> fallo(error.message, "No se pudo verificar la dirección.") }
+                .onSuccess { otro ->
+                    when {
+                        otro == null -> guardarCambios(inmueble)
+                        otro.active -> fallo(MENSAJE_DUPLICADO, MENSAJE_DUPLICADO)
+                        else -> fallo(MENSAJE_DUPLICADO_DE_BAJA, MENSAJE_DUPLICADO_DE_BAJA)
                     }
                 }
-                .onFailure { error -> fallo(error.message, "No se pudo actualizar el inmueble.") }
         }
+    }
+
+    private suspend fun guardarCambios(inmueble: Inmueble) {
+        repository.actualizar(inmueble)
+            .onSuccess { actualizado ->
+                _uiState.update { estado ->
+                    estado.copy(
+                        isLoading = false,
+                        inmuebles = estado.inmuebles.map { if (it.idInmueble == actualizado.idInmueble) actualizado else it },
+                        inmuebleSeleccionado = null,
+                        successMessage = "Datos del inmueble actualizados correctamente."
+                    )
+                }
+            }
+            .onFailure { error -> fallo(error.message, "No se pudo actualizar el inmueble.") }
     }
 
     fun darDeBaja(idInmueble: String) {
@@ -158,6 +205,7 @@ class InmuebleViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             inmuebles = it.inmuebles + reactivado,
+                            mostrandoFormularioRegistro = false,      // <-- agregar
                             successMessage = "Inmueble reactivado con éxito."
                         )
                     }
@@ -263,5 +311,11 @@ class InmuebleViewModel @Inject constructor(
         const val MENSAJE_BAJA_BLOQUEADA =
             "No se puede dar de baja: el inmueble tiene unidades alquiladas. " +
                     "Finaliza primero los contratos vigentes."
+
+        const val MENSAJE_DUPLICADO = "Ya existe un inmueble registrado en esa dirección."
+
+        const val MENSAJE_DUPLICADO_DE_BAJA =
+            "Esa dirección pertenece a un inmueble dado de baja. " +
+                    "Usa otra dirección o reactívalo desde \"Registrar\"."
     }
 }
