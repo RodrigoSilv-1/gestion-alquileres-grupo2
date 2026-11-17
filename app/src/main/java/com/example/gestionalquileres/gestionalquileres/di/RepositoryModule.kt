@@ -12,6 +12,8 @@ import com.example.gestionalquileres.domain.repository.ReciboRepository
 import com.example.gestionalquileres.domain.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.data.repository.FirestoreFotoRepository
 import com.example.gestionalquileres.domain.repository.FotoRepository
+import com.example.gestionalquileres.data.repository.FirestoreDashboardRepository
+import com.example.gestionalquileres.domain.repository.DashboardRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -39,4 +41,8 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindFotoRepository(impl: FirestoreFotoRepository): FotoRepository
+
+    @Binds
+    abstract fun bindDashboardRepository(impl: FirestoreDashboardRepository): DashboardRepository
+
 }

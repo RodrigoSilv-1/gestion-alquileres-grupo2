@@ -7,4 +7,5 @@ object Rutas {
     const val INMUEBLES = "inmuebles"
     const val CONTRATOS = "contratos"
     const val RECIBOS = "recibos"
+    const val DASHBOARD = "dashboard"
 }

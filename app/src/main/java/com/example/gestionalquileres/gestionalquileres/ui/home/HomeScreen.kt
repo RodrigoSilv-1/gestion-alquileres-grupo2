@@ -34,7 +34,8 @@ fun HomeScreen(
     onIrInquilinos: () -> Unit,
     onIrInmuebles: () -> Unit,
     onIrContratos: () -> Unit,
-    onIrRecibos: () -> Unit
+    onIrRecibos: () -> Unit,
+    onIrDashboard: () -> Unit
 ) {
     val esAdmin = user.role == UserRole.ADMIN.name
     val roleText = if (esAdmin) "Administrador" else "Secretario"
@@ -115,6 +116,7 @@ fun HomeScreen(
                 Button(onClick = onIrContratos) { Text("Gestión de Contratos") }
             } else {
                 Button(onClick = onIrRecibos) { Text("Gestión de Recibos") }
+                Button(onClick = onIrDashboard) { Text("Dashboard") }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

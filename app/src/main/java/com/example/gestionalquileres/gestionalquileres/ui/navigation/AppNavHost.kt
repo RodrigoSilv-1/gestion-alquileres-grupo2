@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.gestionalquileres.ui.dashboard.DashboardScreen
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.ui.contrato.ContratoScreen
@@ -36,7 +37,8 @@ fun AppNavHost(
                 onIrInquilinos = { navController.irA(Rutas.INQUILINOS) },
                 onIrInmuebles = { navController.irA(Rutas.INMUEBLES) },
                 onIrContratos = { navController.irA(Rutas.CONTRATOS) },
-                onIrRecibos = { navController.irA(Rutas.RECIBOS) }
+                onIrRecibos = { navController.irA(Rutas.RECIBOS) },
+                onIrDashboard = { navController.irA(Rutas.DASHBOARD) }
             )
         }
 
@@ -54,6 +56,9 @@ fun AppNavHost(
         } else {
             composable(Rutas.RECIBOS) {
                 ReciboScreen(viewModel = hiltViewModel(), onVolver = { navController.volver() })
+            }
+            composable(Rutas.DASHBOARD) {
+                DashboardScreen(viewModel = hiltViewModel(), onVolver = { navController.volver() })
             }
         }
     }

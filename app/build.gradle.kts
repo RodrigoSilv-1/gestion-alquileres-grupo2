@@ -76,4 +76,5 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("androidx.navigation:navigation-compose:2.8.9")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }
