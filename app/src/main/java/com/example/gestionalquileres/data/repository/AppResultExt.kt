@@ -1,4 +1,4 @@
-package com.example.gestionalquileres.data.auth.repository
+package com.example.gestionalquileres.data.repository
 
 import com.example.gestionalquileres.domain.model.AppResult
 import kotlin.coroutines.cancellation.CancellationException

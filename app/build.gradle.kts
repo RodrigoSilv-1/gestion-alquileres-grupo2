@@ -68,6 +68,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0") // Útil para depurar peticiones en el Logcat
     // NUEVO: Librerías de Hilt procesadas por KSP
     implementation("com.google.dagger:hilt-android:2.55")
     ksp("com.google.dagger:hilt-compiler:2.55")
@@ -75,4 +78,15 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
+
+    // Gson (ya lo usas con @SerializedName para serializar operaciones pendientes)
+    implementation("com.google.code.gson:gson:2.11.0")
+
+    implementation("com.google.dagger:hilt-android:${libs.versions.hilt.get()}")
+    ksp("com.google.dagger:hilt-compiler:${libs.versions.hilt.get()}")
 }

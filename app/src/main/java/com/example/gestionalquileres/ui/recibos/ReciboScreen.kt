@@ -40,17 +40,18 @@ fun ReciboScreen(
         viewModel.cargarHistorialRecibos()
     }
 
-// Escucha específicamente los cambios en la propiedad 'successMessage' del estado.
+// Vigila si el registro fue exitoso para cerrar automáticamente el formulario
     LaunchedEffect(uiState.successMessage) {
         // Si la propiedad contiene un mensaje de éxito (no es nulo)
         if (uiState.successMessage != null) {
             // Cierra el formulario de registro automáticamente
             viewModel.mostrarFormularioRegistro(false)
             // Limpia el mensaje en el ViewModel para evitar ejecuciones repetidas
-            viewModel.limpiarMensajes()
         }
     }
-
+/*actúa como un vigía en segundo plano que vigila una variable; en cuanto esta cambia,
+se dispara de inmediato para ordenar un cambio de estado (como cerrar el formulario),
+lo que obliga a la pantalla a redibujarse para que el bloque when de abajo simplemente refleje ese cambio y oculte la interfaz.*/
     when {
         uiState.mostrandoFormularioRegistro -> {
             RegistrarReciboScreen(
@@ -109,7 +110,7 @@ fun ReciboScreen(
                 OutlinedTextField(
                     value = uiState.textoBusqueda,
                     onValueChange = { viewModel.actualizarTextoBusqueda(it) },
-                    placeholder = { Text("Buscar recibo por ${uiState.tipoBusqueda}...") },
+                    placeholder = { Text("Buscar recibo ...") },
                     leadingIcon = {
                         Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar", tint = Color.Gray)
                     },
@@ -226,9 +227,11 @@ fun RegistrarReciboScreen(
         Text(text = "Generar Nuevo Recibo", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Dropdown para seleccionar a quién cobrar
+// Contenedor principal que gestiona el estado de apertura/cierre y sirve de ancla para el menú desplegable
         ExposedDropdownMenuBox(
+        // Indica el estado actual del componente: true (abierto) o false (cerrado)
             expanded = expanded,
+        // Se activa al interactuar: invierte el valor actual (si estaba abierto lo cierra, y viceversa)
             onExpandedChange = { expanded = !expanded }
         ) {
             // Creamos una caja de texto con borde que actúa como botón desplegable
@@ -246,7 +249,7 @@ fun RegistrarReciboScreen(
                 // Hace que ocupe todo el ancho de la pantalla y se conecte con el menú desplegable
                 modifier = Modifier.menuAnchor().fillMaxWidth()
             )
-            // El menú flotante que se despliega al hacer clic en la caja anterior
+// Contenedor secundario (Menu) que crea la lista flotante de opciones que aparecen al hacer clic en el campo de texto
             ExposedDropdownMenu(
                 expanded = expanded, // Controla si el menú está visible (true) o oculto (false)
                 onDismissRequest = { expanded = false } // Si el usuario toca afuera, el menú se cierra
@@ -290,9 +293,13 @@ fun RegistrarReciboScreen(
 
         // Campos variables utilizando el estado unificado con `.copy(...)`
         OutlinedTextField(
+            // Define el valor actual que se muestra en el campo, obtenido directamente del estado
             value = formState.agua,
+// Se ejecuta cada vez que el usuario escribe: actualiza el estado copiando el objeto
+// y modificando únicamente el campo 'agua' con el nuevo valor ingresado (it)
             onValueChange = { formState = formState.copy(agua = it) },
             label = { Text("Agua") },
+// Configura el teclado virtual del celular para que muestre el teclado numérico con decimales
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
@@ -398,7 +405,7 @@ fun ReciboCard(
                     Text(text = "S/ ${concepto.second}", style = MaterialTheme.typography.bodySmall)
                 }
             }
-
+            // Dibuja una línea horizontal divisoria para separar elementos
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             Row(

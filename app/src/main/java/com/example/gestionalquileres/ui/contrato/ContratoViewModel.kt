@@ -2,9 +2,10 @@ package com.example.gestionalquileres.ui.contrato
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.repository.ContratoRepository
-import com.example.gestionalquileres.data.auth.repository.InmuebleRepository
-import com.example.gestionalquileres.data.auth.repository.InquilinoRepository
+import com.example.gestionalquileres.data.repository.ContratoRepositoryImpl
+import com.example.gestionalquileres.data.repository.InmuebleRepositoryImpl
+import com.example.gestionalquileres.data.repository.InquilinoRepositoryImpl
+import com.example.gestionalquileres.data.repository.UnidadAlquilableRepositoryImpl
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.Inquilino
@@ -15,14 +16,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class ContratoViewModel @Inject constructor(
-    private val contratoRepository: ContratoRepository,
-    private val inquilinoRepository: InquilinoRepository,
-    private val inmuebleRepository: InmuebleRepository
+    private val contratoRepository: ContratoRepositoryImpl,
+    private val inquilinoRepository: InquilinoRepositoryImpl,
+    private val inmuebleRepository: InmuebleRepositoryImpl,
+    private val unidadRepository: UnidadAlquilableRepositoryImpl
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContratoUiState())
@@ -37,26 +38,18 @@ class ContratoViewModel @Inject constructor(
             val inmueblesResult = inmuebleRepository.obtenerTodos()
 
             if (contratosResult is AppResult.Exito && inquilinosResult is AppResult.Exito && inmueblesResult is AppResult.Exito) {
-                // NOTA: Si tu clase AppResult usa una variable distinta a "data" (como "datos" o "valor"), cámbiala aquí
                 val inmuebles = inmueblesResult.valor
                 val unidadesDisponiblesList = mutableListOf<Pair<Inmueble, UnidadAlquilable>>()
-                val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
 
                 for (inmueble in inmuebles) {
-                    try {
-                        val snapshot = firestore.collection("inmuebles")
-                            .document(inmueble.idInmueble)
-                            .collection("unidadesAlquilables")
-                            .get()
-                            .await()
-
-                        val unidades = snapshot.documents.mapNotNull { it.toObject(UnidadAlquilable::class.java) }
-                        for (unidad in unidades) {
+                    val unidadesResult = unidadRepository.obtenerUnidadesPorInmueble(inmueble.idInmueble)
+                    if (unidadesResult is AppResult.Exito) {
+                        for (unidad in unidadesResult.valor) {
                             if (!unidad.estaOcupada && unidad.precioRenta > 0.0) {
                                 unidadesDisponiblesList.add(Pair(inmueble, unidad))
                             }
                         }
-                    } catch (e: Exception) { }
+                    }
                 }
 
                 _uiState.value = _uiState.value.copy(

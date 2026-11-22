@@ -3,6 +3,7 @@ package com.example.gestionalquileres
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,9 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -82,6 +80,9 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.text.input.VisualTransformation
+import com.example.gestionalquileres.data.network.NetworkMonitor
+import com.example.gestionalquileres.data.sync.SyncManager
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -92,11 +93,26 @@ class MainActivity : ComponentActivity() {
     private val contratoViewModel: ContratoViewModel by viewModels()
     private val reciboViewModel: ReciboViewModel by viewModels() // <-- INYECCIÓN DEL NUEVO VIEWMODEL
 
+    @Inject
+    lateinit var networkMonitor: NetworkMonitor
+
+    @Inject
+    lateinit var syncManager: SyncManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        enableEdgeToEdge()
         setContent {
             GestionAlquileresTheme {
+                LaunchedEffect(Unit) {
+                    var estabaOnline = networkMonitor.isCurrentlyOnline()
+                    networkMonitor.isOnline.collect { online ->
+                        if (online && !estabaOnline) {
+                            runCatching { syncManager.sincronizarTodo() }
+                        }
+                        estabaOnline = online
+                    }
+                }
                 val uiState by authViewModel.uiState.collectAsState()
                 var showRegister by rememberSaveable { mutableStateOf(false) }
 

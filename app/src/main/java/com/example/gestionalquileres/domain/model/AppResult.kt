@@ -12,7 +12,8 @@ sealed class AppResult<out T> {
 
 // es una funcion de extension donde Si la operación salió bien
 inline fun <T> AppResult<T>.onSuccess(action: (T) -> Unit): AppResult<T> {
-    if (this is AppResult.Exito) action(valor)//ejecuta esto con el resultado
+    if (this is AppResult.Exito) action(valor)//comprueba si el objeto pertenece a exito
+    // ejecuta esto con el resultado
     // y Si es éxito, ejecuta la acción pasándole el dato
     return this // Permite encadenar llamadas (method chaining)
 }

@@ -120,7 +120,7 @@ fun RegistrarInquilinoScreen(
     val context = LocalContext.current
 
 // 'formState' es la variable que guarda los datos del formulario;
-// 'remember' los mantiene guardados en memoria para que no se borren cuando la pantalla se redibuja;
+// 'remember' los mantiene guardados en memoria ram para que no se borren cuando la pantalla se redibuja;
 // 'mutableStateOf' avisa a la interfaz para que se actualice cada vez que hay un cambio;
 // e 'InquilinoFormState()' crea la instancia inicial con todos los campos (nombre, DNI, etc.) vacíos.
     var formState by remember {
@@ -161,11 +161,12 @@ fun RegistrarInquilinoScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = formState.nombre,
+            value = formState.nombre, // Muestra lo que está guardado en el estado (el nombre actual).
             onValueChange = { formState = formState.copy(nombre = it) },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Nombre") }
+            // Actualiza el estado con cada letra nueva que escribes.
+            shape = RoundedCornerShape(12.dp), // Redondea las esquinas de la caja de texto (12dp).
+            modifier = Modifier.fillMaxWidth(), // Estira el campo para que ocupe todo el ancho de la pantalla.
+            label = { Text("Nombre") } // Muestra la etiqueta flotante con el texto "Nombre".
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -308,7 +309,8 @@ fun RegistrarInquilinoScreen(
                 // Botón principal para abrir la galería del celular
                 Button(
                     onClick = {
-                        // Lanzamos el selector nativo de Android filtrando únicamente por archivos de imagen
+                        // 1. Al hacer clic en el botón, se ejecuta el lanzador que preparamos previamente.
+                        // 2. Le ordenamos al sistema que abra la galería filtrando solo archivos de imagen.
                         selectorFotoLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
@@ -624,7 +626,8 @@ fun InquilinoScreen(
                     viewModel.mostrarFormularioRegistro(false)
                 }
             )
-
+        //de este estado ui se verifica si es null "?.", es null, no hace nada
+        //si no es null entonces el valor de ese ui pasara a la funcion landa
             uiState.inquilinoInactivoDetectado?.let { inactivo ->
                 AlertDialog(
                     onDismissRequest = { viewModel.cancelarReactivacion() },
@@ -651,14 +654,8 @@ fun InquilinoScreen(
                     }
                 )
             }
-//definimos este componente para obtener la lista de inquilinos mediante vm por primera vez
-            LaunchedEffect(uiState.successMessage) {
-                if (uiState.successMessage != null) {
-                    viewModel.limpiarMensajes()
-                }
-            }
         }
-
+        //en esa ui verifica si hay un inquilino para ejecutar esa funcion
         uiState.inquilinoSeleccionado != null -> {
             EditarInquilinoScreen(
                 inquilino = uiState.inquilinoSeleccionado!!,
@@ -785,10 +782,15 @@ fun InquilinoScreen(
                 ) {
                     Button(
                         onClick = {
+                            // 1. Verifica que el campo de búsqueda tenga contenido real (no esté vacío ni con espacios)
                             if (uiState.textoBusqueda.isNotBlank()) {
+
+                                // 2. Evalúa si el filtro seleccionado es por "Nombre"
                                 if (uiState.tipoBusqueda == "Nombre") {
+                                    // Ejecuta la búsqueda por nombre en el ViewModel
                                     viewModel.obtenerPorNombre(uiState.textoBusqueda)
                                 } else {
+                                    // De lo contrario, asume que es por DNI y ejecuta esa búsqueda
                                     viewModel.obtenerPorDni(uiState.textoBusqueda)
                                 }
                             }

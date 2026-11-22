@@ -2,8 +2,8 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.auth.repository.InmuebleRepository
-import com.example.gestionalquileres.data.auth.repository.UnidadAlquilableRepository
+import com.example.gestionalquileres.data.repository.InmuebleRepositoryImpl
+import com.example.gestionalquileres.data.repository.UnidadAlquilableRepositoryImpl
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
@@ -19,16 +19,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InmuebleViewModel @Inject constructor(
-    private val repository: InmuebleRepository,
-    private val unidadRepository: UnidadAlquilableRepository
+    private val repository: InmuebleRepositoryImpl,
+    private val unidadRepository: UnidadAlquilableRepositoryImpl
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InmuebleUiState())
     val uiState: StateFlow<InmuebleUiState> = _uiState.asStateFlow()
-
-    // ------------------------------------------------------------------
-    // Helpers privados
-    // ------------------------------------------------------------------
 
     private fun iniciarOperacion() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
@@ -50,10 +46,6 @@ class InmuebleViewModel @Inject constructor(
         }
     }
 
-    // ------------------------------------------------------------------
-    // Lectura y búsqueda
-    // ------------------------------------------------------------------
-
     fun obtenerTodos() =
         cargarInmuebles("No se pudieron obtener los inmuebles.") { repository.obtenerTodos() }
 
@@ -74,10 +66,6 @@ class InmuebleViewModel @Inject constructor(
         obtenerTodos()
     }
 
-    // ------------------------------------------------------------------
-    // Altas, bajas y modificaciones
-    // ------------------------------------------------------------------
-
     fun registrar(inmueble: Inmueble) {
         viewModelScope.launch {
             iniciarOperacion()
@@ -86,7 +74,7 @@ class InmuebleViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            inmuebles = it.inmuebles + nuevo,
+                            inmuebles = (it.inmuebles + nuevo).distinctBy { item -> item.idInmueble },
                             mostrandoFormularioRegistro = false,
                             successMessage = "Inmueble registrado correctamente."
                         )
@@ -141,7 +129,7 @@ class InmuebleViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            inmuebles = it.inmuebles + reactivado,
+                            inmuebles = (it.inmuebles + reactivado).distinctBy { item -> item.idInmueble },
                             successMessage = "Inmueble reactivado con éxito."
                         )
                     }
@@ -149,10 +137,6 @@ class InmuebleViewModel @Inject constructor(
                 .onFailure { error -> fallo(error.message, "No se pudo reactivar el inmueble.") }
         }
     }
-
-    // ------------------------------------------------------------------
-    // Detalle: unidades alquilables
-    // ------------------------------------------------------------------
 
     fun verDetalle(inmueble: Inmueble) {
         _uiState.update {
@@ -197,10 +181,6 @@ class InmuebleViewModel @Inject constructor(
     private fun List<UnidadAlquilable>.ordenadas() =
         sortedWith(compareBy<UnidadAlquilable>({ it.piso }, { it.numeroUnidad }))
 
-    // ------------------------------------------------------------------
-    // Estado de la interfaz
-    // ------------------------------------------------------------------
-
     fun mostrarFormularioRegistro(mostrar: Boolean) {
         _uiState.update {
             it.copy(mostrandoFormularioRegistro = mostrar, errorMessage = null, successMessage = null)
@@ -215,7 +195,6 @@ class InmuebleViewModel @Inject constructor(
         _uiState.update { it.copy(inmuebleDarDeBaja = inmueble) }
     }
 
-    /** Cierra formulario, edición o detalle y vuelve al listado. */
     fun volverAlListado() {
         _uiState.update {
             it.copy(

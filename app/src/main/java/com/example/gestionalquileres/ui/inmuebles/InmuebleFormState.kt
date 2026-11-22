@@ -30,7 +30,7 @@ class InmuebleFormState(inmueble: Inmueble? = null) {
         direccion = direccion.trim(),
         numeroDireccion = numeroDireccion.trim(),
         codigoPostal = codigoPostal.trim(),
-        fotografia = fotografia
+        fotografia = fotografia ?: "" // <-- Línea 33
     ) ?: Inmueble(
         distrito = distrito.trim(),
         direccion = direccion.trim(),
@@ -38,6 +38,6 @@ class InmuebleFormState(inmueble: Inmueble? = null) {
         codigoPostal = codigoPostal.trim(),
         numeroPisos = numeroPisos.toIntOrNull() ?: 0,
         unidadesPorPiso = unidadesPorPiso.toIntOrNull() ?: 0,
-        fotografia = fotografia
+        fotografia = fotografia ?: "" // <-- Línea 41
     )
 }
