@@ -33,6 +33,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true   // <-- NUEVO de rafa
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -45,6 +46,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")   // <-- NUEVO rafa
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
@@ -86,7 +88,10 @@ dependencies {
 
     // Gson (ya lo usas con @SerializedName para serializar operaciones pendientes)
     implementation("com.google.code.gson:gson:2.11.0")
-
+    implementation("androidx.navigation:navigation-compose:2.8.9")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.google.dagger:hilt-android:${libs.versions.hilt.get()}")
     ksp("com.google.dagger:hilt-compiler:${libs.versions.hilt.get()}")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }

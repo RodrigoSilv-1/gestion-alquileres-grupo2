@@ -83,6 +83,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.example.gestionalquileres.data.network.NetworkMonitor
 import com.example.gestionalquileres.data.sync.SyncManager
 import javax.inject.Inject
+import com.example.gestionalquileres.ui.dashboard.DashboardScreen
+import com.example.gestionalquileres.ui.dashboard.DashboardViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -92,6 +94,8 @@ class MainActivity : ComponentActivity() {
     private val inmuebleViewModel: InmuebleViewModel by viewModels()
     private val contratoViewModel: ContratoViewModel by viewModels()
     private val reciboViewModel: ReciboViewModel by viewModels() // <-- INYECCIÓN DEL NUEVO VIEWMODEL
+
+    private val dashboardViewModel: DashboardViewModel by viewModels()
 
     @Inject
     lateinit var networkMonitor: NetworkMonitor
@@ -126,7 +130,8 @@ class MainActivity : ComponentActivity() {
                             inquilinoViewModel = inquilinoViewModel,
                             inmuebleViewModel = inmuebleViewModel,
                             contratoViewModel = contratoViewModel,
-                            reciboViewModel = reciboViewModel // <-- SE PASA AL HOMESCREEN
+                            reciboViewModel = reciboViewModel, // <-- SE PASA AL HOMESCREEN
+                            dashboardViewModel = dashboardViewModel
                         )
                     }
 
@@ -643,12 +648,14 @@ fun HomeScreen(
     inquilinoViewModel: InquilinoViewModel,
     inmuebleViewModel: InmuebleViewModel,
     contratoViewModel: ContratoViewModel,
-    reciboViewModel: ReciboViewModel // <-- NUEVO PARÁMETRO
+    reciboViewModel: ReciboViewModel,
+    dashboardViewModel: DashboardViewModel
 ) {
     var mostrarInquilinos by rememberSaveable { mutableStateOf(false) }
     var mostrarInmuebles by rememberSaveable { mutableStateOf(false) }
     var mostrarContratos by rememberSaveable { mutableStateOf(false) }
     var mostrarRecibos by rememberSaveable { mutableStateOf(false) } // <-- NUEVO ESTADO DE NAVEGACIÓN
+    var mostrarDashboard by rememberSaveable { mutableStateOf(false) }
 
     if (mostrarInmuebles) {
         InmuebleScreen(
@@ -669,6 +676,11 @@ fun HomeScreen(
         ReciboScreen(
             viewModel = reciboViewModel,
             onVolver = { mostrarRecibos = false }
+        )
+    } else if (mostrarDashboard) {
+        DashboardScreen(
+            viewModel = dashboardViewModel,
+            onVolver = { mostrarDashboard = false }
         )
     } else {
         val roleText = if (user.role == UserRole.ADMIN.name) "Administrador" else "Secretario"
@@ -783,6 +795,12 @@ fun HomeScreen(
                         }
                     ) {
                         Text("Gestión de Recibos")
+                    }
+
+                    Button(
+                        onClick = { mostrarDashboard = true }
+                    ) {
+                        Text("Dashboard")
                     }
                 }
 

@@ -9,3 +9,4 @@ val BackgroundWhite = Color(0xFFFAFAFA)
 val DangerRed = Color(0xFFD32F2F) // Rojo para los botones de "Dar de baja"
 val TextPrimary = Color(0xFF1C1B1F)
 val TextSecondary = Color(0xFF555555)
+val ExitoVerde = Color(0xFF4CAF50) // Estado "Pagado"
