@@ -1,6 +1,5 @@
 package com.example.gestionalquileres.ui.common
 
-import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,8 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Muestra una imagen Base64 (decodificada fuera del hilo principal) o el [placeholder]. */
+/** Muestra una imagen Base64 (con caché de Coil) o el [placeholder] si no hay foto. */
 @Composable
 fun ImagenBase64(
     base64: String?,
@@ -40,32 +41,29 @@ fun ImagenBase64(
     contentScale: ContentScale = ContentScale.Crop,
     placeholder: @Composable () -> Unit = {}
 ) {
-    val bytes by produceState<ByteArray?>(null, base64) {
-        value = if (base64.isNullOrBlank()) null
-        else withContext(Dispatchers.Default) {
-            runCatching { Base64.decode(base64, Base64.DEFAULT) }.getOrNull()
-        }
-    }
-
-    val datos = bytes
-    if (datos != null) {
+    if (base64.isNullOrBlank()) {
+        placeholder()
+    } else {
+        val modelo = remember(base64) { FotoBase64(base64) }
         AsyncImage(
-            model = datos,
+            model = modelo,
             contentDescription = contentDescription,
             modifier = modifier,
             contentScale = contentScale
         )
-    } else {
-        placeholder()
     }
 }
 
-/** Vista previa + botones para elegir, cambiar o quitar una fotografía. */
+/**
+ * Vista previa + botones para elegir, cambiar o quitar una fotografía.
+ * [onFotoChange] recibe (miniatura, foto grande); ambos null = se quitó la foto.
+ */
 @Composable
 fun FotoPicker(
     fotografiaBase64: String?,
-    onFotoChange: (String?) -> Unit,
-    modifier: Modifier = Modifier
+    onFotoChange: (miniatura: String?, completa: String?) -> Unit,
+    modifier: Modifier = Modifier,
+    enfocarSolicitud: Int = 0
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -75,9 +73,20 @@ fun FotoPicker(
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                withContext(Dispatchers.IO) { uriABase64(context, uri) }?.let(onFotoChange)
+                withContext(Dispatchers.IO) { uriAFotoProcesada(context, uri) }
+                    ?.let { onFotoChange(it.miniatura, it.completa) }
             }
         }
+    }
+
+    val abrirGaleria: () -> Unit = {
+        launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+    val focoBoton = remember { FocusRequester() }
+
+    LaunchedEffect(enfocarSolicitud) {
+        if (enfocarSolicitud > 0) focoBoton.requestFocus()
     }
 
     val hayFoto = !fotografiaBase64.isNullOrBlank()
@@ -109,15 +118,14 @@ fun FotoPicker(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
-                onClick = {
-                    launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }
+                onClick = abrirGaleria,
+                modifier = Modifier.focusRequester(focoBoton)
             ) {
                 Text(if (hayFoto) "Cambiar foto" else "Elegir foto")
             }
 
             if (hayFoto) {
-                TextButton(onClick = { onFotoChange(null) }) {
+                TextButton(onClick = { onFotoChange(null, null) }) {
                     Text("Quitar foto", color = MaterialTheme.colorScheme.error)
                 }
             }

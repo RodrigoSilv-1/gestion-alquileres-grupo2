@@ -9,24 +9,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import com.example.gestionalquileres.domain.model.MAX_UNIDADES_POR_INMUEBLE
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inmueble
-import com.example.gestionalquileres.ui.common.FotoPicker
+import com.example.gestionalquileres.gestionalquileres.ui.common.CampoTexto
+import com.example.gestionalquileres.gestionalquileres.ui.common.FotoPicker
 
 @Composable
 fun RegistrarInmuebleScreen(
@@ -36,7 +39,6 @@ fun RegistrarInmuebleScreen(
 ) {
     val form = remember { InmuebleFormState() }
     InmuebleFormulario(
-        titulo = "Registrar Inmueble",
         textoGuardar = "Guardar",
         form = form,
         esNuevo = true,
@@ -55,7 +57,6 @@ fun EditarInmuebleScreen(
 ) {
     val form = remember(inmueble.idInmueble) { InmuebleFormState(inmueble) }
     InmuebleFormulario(
-        titulo = "Modificar Inmueble",
         textoGuardar = "Guardar cambios",
         form = form,
         esNuevo = false,
@@ -67,7 +68,6 @@ fun EditarInmuebleScreen(
 
 @Composable
 private fun InmuebleFormulario(
-    titulo: String,
     textoGuardar: String,
     form: InmuebleFormState,
     esNuevo: Boolean,
@@ -75,29 +75,57 @@ private fun InmuebleFormulario(
     onGuardar: () -> Unit,
     onCancelar: () -> Unit
 ) {
+    var abrirFoto by remember { mutableIntStateOf(0) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(titulo, style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
-
         CampoTexto(form.distrito, { form.distrito = it }, "Distrito")
         CampoTexto(form.direccion, { form.direccion = it }, "Dirección")
         CampoTexto(form.numeroDireccion, { form.numeroDireccion = it }, "Número de Dirección", KeyboardType.Number)
-        CampoTexto(form.codigoPostal, { form.codigoPostal = it }, "Código Postal", KeyboardType.Number)
+        CampoTexto(
+            form.codigoPostal, { form.codigoPostal = it }, "Código Postal", KeyboardType.Number,
+            imeAction = if (esNuevo) ImeAction.Next else ImeAction.Done,
+            onDone = { abrirFoto++ }
+        )
 
         // Pisos y unidades solo se definen al registrar (generan las unidades alquilables)
-        CampoTexto(form.numeroPisos, { form.numeroPisos = it }, "Número de Pisos", KeyboardType.Number, soloDigitos = true, enabled = esNuevo)
-        CampoTexto(form.unidadesPorPiso, { form.unidadesPorPiso = it }, "Unidades / Departamentos por Piso", KeyboardType.Number, soloDigitos = true, enabled = esNuevo)
+        CampoTexto(
+            form.numeroPisos, { form.numeroPisos = it }, "Número de Pisos",
+            KeyboardType.Number, soloDigitos = true, enabled = esNuevo,
+            esError = esNuevo && form.excedeLimite
+        )
+        CampoTexto(
+            form.unidadesPorPiso, { form.unidadesPorPiso = it }, "Unidades / Departamentos por Piso",
+            KeyboardType.Number, soloDigitos = true, enabled = esNuevo,
+            esError = esNuevo && form.excedeLimite,
+            ayuda = when {
+                !esNuevo -> null
+                form.excedeLimite ->
+                    "Pisos × unidades no puede superar $MAX_UNIDADES_POR_INMUEBLE (actual: ${form.totalUnidades})."
+                form.totalUnidades > 0 ->
+                    "Total: ${form.totalUnidades} unidades (máx. $MAX_UNIDADES_POR_INMUEBLE)."
+                else -> null
+            },
+            imeAction = ImeAction.Done,
+            onDone = { abrirFoto++ }
+        )
 
         Spacer(Modifier.height(8.dp))
         Text("Fotografía", style = MaterialTheme.typography.titleMedium)
-        FotoPicker(fotografiaBase64 = form.fotografia, onFotoChange = { form.fotografia = it })
+        FotoPicker(
+            fotografiaBase64 = form.fotografia,
+            onFotoChange = { miniatura, completa ->
+                form.fotografia = miniatura
+                form.fotoCompleta = completa
+            },
+            enfocarSolicitud = abrirFoto
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -115,25 +143,4 @@ private fun InmuebleFormulario(
             }
         }
     }
-}
-
-@Composable
-private fun CampoTexto(
-    valor: String,
-    onCambio: (String) -> Unit,
-    etiqueta: String,
-    teclado: KeyboardType = KeyboardType.Text,
-    soloDigitos: Boolean = false,
-    enabled: Boolean = true
-) {
-    OutlinedTextField(
-        value = valor,
-        onValueChange = { onCambio(if (soloDigitos) it.filter(Char::isDigit) else it) },
-        label = { Text(etiqueta) },
-        enabled = enabled,
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        keyboardOptions = KeyboardOptions(keyboardType = teclado),
-        modifier = Modifier.fillMaxWidth()
-    )
 }

@@ -1,18 +1,18 @@
 package com.example.gestionalquileres.ui.auth
 
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionalquileres.data.auth.AuthRepository
+import com.example.gestionalquileres.domain.model.UserRole
+import com.example.gestionalquileres.domain.model.onFailure
+import com.example.gestionalquileres.domain.model.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import com.example.gestionalquileres.domain.model.onSuccess
-import com.example.gestionalquileres.domain.model.onFailure
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.example.gestionalquileres.domain.model.UserRole
-import android.util.Patterns
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -80,15 +80,17 @@ class AuthViewModel @Inject constructor(
                                 currentUser = user
                             )
                         }
-                        .onFailure {
+                        .onFailure { error ->
                             _uiState.value = AuthUiState(
-                                errorMessage = "Credenciales inválidas. Verifica tu correo y contraseña."
+                                errorMessage = error.message
+                                    ?: "Credenciales inválidas. Verifica tu correo y contraseña."
                             )
                         }
                 }
             }
         }
     }
+
     fun signInWithGoogle(
         idToken: String,
         role: UserRole
@@ -108,6 +110,7 @@ class AuthViewModel @Inject constructor(
                 }
         }
     }
+
     fun logout() {
         repository.logout()
         _uiState.value = AuthUiState()
@@ -134,6 +137,7 @@ class AuthViewModel @Inject constructor(
     fun showError(message: String) {
         _uiState.value = AuthUiState(errorMessage = message)
     }
+
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }

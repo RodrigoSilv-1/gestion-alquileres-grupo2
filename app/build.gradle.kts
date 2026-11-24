@@ -80,6 +80,9 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("androidx.navigation:navigation-compose:2.8.9")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
@@ -88,10 +91,7 @@ dependencies {
 
     // Gson (ya lo usas con @SerializedName para serializar operaciones pendientes)
     implementation("com.google.code.gson:gson:2.11.0")
-    implementation("androidx.navigation:navigation-compose:2.8.9")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.google.dagger:hilt-android:${libs.versions.hilt.get()}")
     ksp("com.google.dagger:hilt-compiler:${libs.versions.hilt.get()}")
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }

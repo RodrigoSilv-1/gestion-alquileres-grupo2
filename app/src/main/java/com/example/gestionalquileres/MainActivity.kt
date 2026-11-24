@@ -49,12 +49,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
-import com.example.gestionalquileres.ui.auth.AuthUiState
-import com.example.gestionalquileres.ui.auth.AuthViewModel
+import com.example.gestionalquileres.gestionalquileres.ui.auth.AuthUiState
+import com.example.gestionalquileres.gestionalquileres.ui.auth.AuthViewModel
 import com.example.gestionalquileres.ui.inmuebles.InmuebleScreen
 import com.example.gestionalquileres.ui.inmuebles.InmuebleViewModel
 import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
-import com.example.gestionalquileres.ui.inquilinos.InquilinoViewModel
 import com.example.gestionalquileres.ui.theme.GestionAlquileresTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import dagger.hilt.android.AndroidEntryPoint
@@ -83,8 +82,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.example.gestionalquileres.data.network.NetworkMonitor
 import com.example.gestionalquileres.data.sync.SyncManager
 import javax.inject.Inject
-import com.example.gestionalquileres.ui.dashboard.DashboardScreen
-import com.example.gestionalquileres.ui.dashboard.DashboardViewModel
+import com.example.gestionalquileres.gestionalquileres.ui.dashboard.DashboardScreen
+import com.example.gestionalquileres.gestionalquileres.ui.dashboard.DashboardViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

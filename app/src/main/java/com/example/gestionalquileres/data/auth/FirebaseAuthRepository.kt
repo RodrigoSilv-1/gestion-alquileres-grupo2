@@ -4,11 +4,11 @@ import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.google.firebase.auth.GoogleAuthProvider
 
 @Singleton
 class FirebaseAuthRepository @Inject constructor(
@@ -18,8 +18,7 @@ class FirebaseAuthRepository @Inject constructor(
 
     override suspend fun register(
         email: String,
-        password: String,
-        role: UserRole
+        password: String
     ): AppResult<AppUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
@@ -30,7 +29,7 @@ class FirebaseAuthRepository @Inject constructor(
             val appUser = AppUser(
                 uid = firebaseUser.uid,
                 email = firebaseUser.email ?: email,
-                role = role.name,
+                role = UserRole.SECRETARIO.name,   // siempre; los admins se promueven desde la consola
                 active = true
             )
 
@@ -57,8 +56,7 @@ class FirebaseAuthRepository @Inject constructor(
         }
     }
     override suspend fun signInWithGoogle(
-        idToken: String,
-        role: UserRole
+        idToken: String
     ): AppResult<AppUser> {
         return try {
             val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -86,7 +84,7 @@ class FirebaseAuthRepository @Inject constructor(
             val newUser = AppUser(
                 uid = firebaseUser.uid,
                 email = firebaseUser.email ?: "",
-                role = role.name,
+                role = UserRole.SECRETARIO.name,
                 active = true
             )
 

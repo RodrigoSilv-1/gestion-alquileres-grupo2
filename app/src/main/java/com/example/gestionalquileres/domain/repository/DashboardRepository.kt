@@ -5,13 +5,6 @@ import com.example.gestionalquileres.domain.model.CobranzaMes
 import com.example.gestionalquileres.domain.model.ResumenGeneral
 
 interface DashboardRepository {
-    suspend fun obtenerResumenGeneral(
-        fechaInicio: String,
-        fechaFin: String
-    ): AppResult<ResumenGeneral>
-
-    suspend fun obtenerCobranzaMes(
-        fechaInicio: String,
-        fechaFin: String
-    ): AppResult<CobranzaMes>
+    suspend fun obtenerResumenGeneral(desdeMes: String, hastaMes: String): AppResult<ResumenGeneral>
+    suspend fun obtenerCobranzaMes(desde: String, hasta: String): AppResult<CobranzaMes>
 }

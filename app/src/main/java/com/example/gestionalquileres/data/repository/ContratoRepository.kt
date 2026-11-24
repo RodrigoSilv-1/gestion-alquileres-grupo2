@@ -8,6 +8,9 @@ import com.example.gestionalquileres.data.remote.ContratoDto
 import com.example.gestionalquileres.data.remote.safeApiCall
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
+import com.example.gestionalquileres.domain.model.CursorPagina
+import com.example.gestionalquileres.domain.model.Pagina
+import com.example.gestionalquileres.domain.model.TAMANO_PAGINA
 import com.example.gestionalquileres.domain.repository.ContratoRepository
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -20,7 +23,6 @@ class ContratoRepositoryImpl @Inject constructor(
     private val apiService: ApiService,
     private val networkMonitor: NetworkMonitor,
     private val gson: Gson,
-
     @ApplicationContext private val context: Context
 ) : ContratoRepository {
 
@@ -103,6 +105,53 @@ class ContratoRepositoryImpl @Inject constructor(
             } else {
                 leerCache().filter { it.active }
             }
+        }
+    }
+
+    override suspend fun obtenerContratosActivosPagina(
+        limite: Int,
+        despues: CursorPagina?
+    ): AppResult<Pagina<Contrato>> {
+        return safeApiCall {
+            val activos = if (networkMonitor.isCurrentlyOnline()) {
+                val remotos = apiService.obtenerContratos()
+                val todosDominio = remotos.map { it.aDomain() }
+                guardarCache(todosDominio)
+                todosDominio.filter { it.active }
+            } else {
+                leerCache().filter { it.active }
+            }
+
+            // Ordena del más reciente al más antiguo (ajusta la clave si tu modelo usa otro campo de orden)
+            val ordenados = activos.sortedByDescending { it.idContrato }
+
+            val inicioIndex = if (despues != null) {
+                val indiceCursor = ordenados.indexOfFirst { it.idContrato == despues.id }
+                if (indiceCursor >= 0) indiceCursor + 1 else 0
+            } else {
+                0
+            }
+
+            val tamano = limite.coerceAtLeast(1)
+            val rebanada = if (inicioIndex < ordenados.size) {
+                ordenados.drop(inicioIndex).take(tamano + 1)
+            } else {
+                emptyList()
+            }
+
+            val hayMas = rebanada.size > tamano
+            val itemsPagina = if (hayMas) rebanada.take(tamano) else rebanada
+            val siguienteCursor = if (hayMas && itemsPagina.isNotEmpty()) {
+                CursorPagina(id = itemsPagina.last().idContrato)
+            } else {
+                null
+            }
+
+            Pagina(
+                items = itemsPagina,
+                siguienteCursor = siguienteCursor,
+                hayMas = hayMas
+            )
         }
     }
 
