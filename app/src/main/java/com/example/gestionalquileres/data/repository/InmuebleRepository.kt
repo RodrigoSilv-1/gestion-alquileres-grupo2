@@ -9,7 +9,9 @@ import com.example.gestionalquileres.data.remote.UnidadAlquilableDto
 import com.example.gestionalquileres.data.remote.safeApiCall
 import com.example.gestionalquileres.data.sync.SyncManager
 import com.example.gestionalquileres.domain.model.AppResult
+import com.example.gestionalquileres.domain.model.CursorPagina
 import com.example.gestionalquileres.domain.model.Inmueble
+import com.example.gestionalquileres.domain.model.Pagina
 import com.example.gestionalquileres.domain.repository.InmuebleRepository
 import java.util.UUID
 import javax.inject.Inject
@@ -20,6 +22,8 @@ class InmuebleRepositoryImpl @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val syncManager: SyncManager
 ) : InmuebleRepository {
+
+    private data class CursorInmuebleId(val ultimoId: String) : CursorPagina
 
     override suspend fun registrar(inmueble: Inmueble): AppResult<Inmueble> {
         return safeApiCall {
@@ -34,7 +38,7 @@ class InmuebleRepositoryImpl @Inject constructor(
                     codigoPostal = inmueble.codigoPostal,
                     numeroPisos = inmueble.numeroPisos,
                     unidadesPorPiso = inmueble.unidadesPorPiso,
-                    fotografia = inmueble.fotografia,
+                    fotografia = inmueble.fotografia?: "",
                     active = true
                 )
 
@@ -78,7 +82,7 @@ class InmuebleRepositoryImpl @Inject constructor(
                     codigoPostal = dominioOffline.codigoPostal,
                     numeroPisos = dominioOffline.numeroPisos,
                     unidadesPorPiso = dominioOffline.unidadesPorPiso,
-                    fotografia = dominioOffline.fotografia,
+                    fotografia = dominioOffline.fotografia?: "",
                     active = true
                 )
 
@@ -124,7 +128,73 @@ class InmuebleRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun obtenerPorCodigoPostal(codigoPostal: String): AppResult<List<Inmueble>> {
+    override suspend fun obtenerPagina(
+        limite: Int,
+        despues: CursorPagina?
+    ): AppResult<Pagina<Inmueble>> {
+        return safeApiCall {
+            val activos = when (val res = obtenerTodos()) {
+                is AppResult.Exito -> res.valor.filter { it.active }
+                is AppResult.Error -> throw res.excepcion
+            }
+
+            val ordenados = activos.sortedByDescending { it.idInmueble }
+            val cursorId = (despues as? CursorInmuebleId)?.ultimoId
+            val inicioIndex = if (cursorId != null) {
+                val idx = ordenados.indexOfFirst { it.idInmueble == cursorId }
+                if (idx >= 0) idx + 1 else 0
+            } else {
+                0
+            }
+
+            val tamano = limite.coerceAtLeast(1)
+            val rebanada = if (inicioIndex < ordenados.size) {
+                ordenados.drop(inicioIndex).take(tamano + 1)
+            } else {
+                emptyList()
+            }
+
+            val hayMas = rebanada.size > tamano
+            val itemsPagina = if (hayMas) rebanada.take(tamano) else rebanada
+            val siguienteCursor = if (hayMas && itemsPagina.isNotEmpty()) {
+                CursorInmuebleId(ultimoId = itemsPagina.last().idInmueble)
+            } else {
+                null
+            }
+
+            Pagina(
+                items = itemsPagina,
+                siguiente = siguienteCursor
+            )
+        }
+    }
+
+    override suspend fun buscarPorDireccion(
+        distrito: String,
+        direccion: String,
+        numeroDireccion: String,
+        excluirId: String?
+    ): AppResult<Inmueble?> {
+        return safeApiCall {
+            val listaActual = when (val res = obtenerTodos()) {
+                is AppResult.Exito -> res.valor
+                is AppResult.Error -> throw res.excepcion
+            }
+
+            val dNorm = distrito.trim().lowercase()
+            val dirNorm = direccion.trim().lowercase()
+            val numNorm = numeroDireccion.trim().lowercase()
+
+            listaActual.firstOrNull { item ->
+                (excluirId == null || item.idInmueble != excluirId) &&
+                        item.distrito.trim().lowercase() == dNorm &&
+                        item.direccion.trim().lowercase() == dirNorm &&
+                        item.numeroDireccion.trim().lowercase() == numNorm
+            }
+        }
+    }
+
+    suspend fun obtenerPorCodigoPostal(codigoPostal: String): AppResult<List<Inmueble>> {
         return safeApiCall {
             if (networkMonitor.isCurrentlyOnline()) {
                 apiService.obtenerInmuebles()
@@ -138,7 +208,7 @@ class InmuebleRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun obtenerPorDistrito(distrito: String): AppResult<List<Inmueble>> {
+    suspend fun obtenerPorDistrito(distrito: String): AppResult<List<Inmueble>> {
         return safeApiCall {
             if (networkMonitor.isCurrentlyOnline()) {
                 apiService.obtenerInmuebles()
@@ -165,7 +235,7 @@ class InmuebleRepositoryImpl @Inject constructor(
                 codigoPostal = inmueble.codigoPostal,
                 numeroPisos = inmueble.numeroPisos,
                 unidadesPorPiso = inmueble.unidadesPorPiso,
-                fotografia = inmueble.fotografia,
+                fotografia = inmueble.fotografia?: "",
                 active = inmueble.active
             )
 
@@ -240,7 +310,7 @@ class InmuebleRepositoryImpl @Inject constructor(
                 codigoPostal = reactivado.codigoPostal,
                 numeroPisos = reactivado.numeroPisos,
                 unidadesPorPiso = reactivado.unidadesPorPiso,
-                fotografia = reactivado.fotografia,
+                fotografia = reactivado.fotografia?: "",
                 active = true
             )
 
@@ -275,7 +345,7 @@ class InmuebleRepositoryImpl @Inject constructor(
             codigoPostal = codigoPostal,
             numeroPisos = numeroPisos,
             unidadesPorPiso = unidadesPorPiso,
-            fotografia = fotografia,
+            fotografia = fotografia ?: "",
             active = active
         )
     }

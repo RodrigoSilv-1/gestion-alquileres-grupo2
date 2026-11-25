@@ -1,7 +1,11 @@
 package com.example.gestionalquileres.domain.repository
 
+import com.example.gestionalquileres.data.remote.safeApiCall
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
+import com.example.gestionalquileres.domain.model.CursorPagina
+import com.example.gestionalquileres.domain.model.Pagina
+import com.example.gestionalquileres.domain.model.TAMANO_PAGINA
 
 interface ContratoRepository {
     suspend fun registrarContrato(contrato: Contrato): AppResult<Contrato>
@@ -17,4 +21,5 @@ interface ContratoRepository {
 
     /** MIGRACIÓN ÚNICA: reconstruye las marcas de ocupación a partir de los contratos vigentes. */
     suspend fun reconstruirOcupacion(): AppResult<Int>
+
 }

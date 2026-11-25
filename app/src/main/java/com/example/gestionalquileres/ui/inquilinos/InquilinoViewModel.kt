@@ -2,12 +2,14 @@ package com.example.gestionalquileres.ui.inquilinos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.repository.FotoRepository
+import com.example.gestionalquileres.domain.model.FotoRepository
 import com.example.gestionalquileres.data.repository.InquilinoRepositoryImpl
+import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.domain.model.TipoFoto
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
+import com.example.gestionalquileres.domain.model.sincronizar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -275,5 +277,32 @@ class InquilinoViewModel @Inject constructor(
     /** Cierra el diálogo de baja y muestra el motivo en el Snackbar. */
     private fun bajaRechazada(mensaje: String) {
         _uiState.update { it.copy(isLoading = false, inquilinoDarDeBaja = null, errorMessage = mensaje) }
+    }
+
+    fun cargarFotoCompleta(tipo: TipoFoto, idPropietario: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            when (val resultado = fotoRepository.obtener(tipo, idPropietario)) {
+                is AppResult.Exito -> _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        fotoCompletaEnVista = resultado.valor
+                    )
+                }
+                is AppResult.Error -> _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = resultado.excepcion.message ?: "No se pudo cargar la foto."
+                    )
+                }
+            }
+        }
+    }
+
+    fun alSeleccionarFotoMiniatura(inquilino: Inquilino) {
+        cargarFotoCompleta(
+            tipo = TipoFoto.INQUILINO,
+            idPropietario = inquilino.idInquilino
+        )
     }
 }

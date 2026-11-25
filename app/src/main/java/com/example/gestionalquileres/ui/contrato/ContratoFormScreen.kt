@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.comoMonto
-import com.example.gestionalquileres.gestionalquileres.ui.common.CampoFecha
+import com.example.gestionalquileres.ui.common.CampoFecha
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)

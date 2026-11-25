@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import com.example.gestionalquileres.gestionalquileres.ui.common.PieDePaginacion
+import com.example.gestionalquileres.ui.common.PieDePaginacion
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -45,7 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inmueble
-import com.example.gestionalquileres.gestionalquileres.ui.common.AppTopBar
+import com.example.gestionalquileres.ui.common.AppTopBar
 
 // Pantalla principal: decide qué se muestra (listado, formulario, edición o detalle)
 @Composable
@@ -133,7 +133,8 @@ fun InmuebleScreen(
                     onCargarMas = viewModel::cargarMas,
                     onVerDetalle = viewModel::verDetalle,
                     onModificar = viewModel::seleccionarInmuebleParaEditar,
-                    onDarDeBaja = viewModel::seleccionarInmuebleParaBaja
+                    onDarDeBaja = viewModel::seleccionarInmuebleParaBaja,
+                    onSeleccionarFoto = viewModel::alSeleccionarFotoMiniatura
                 )
             }
         }
@@ -193,7 +194,8 @@ private fun ListadoInmuebles(
     onCargarMas: () -> Unit,
     onVerDetalle: (Inmueble) -> Unit,
     onModificar: (Inmueble) -> Unit,
-    onDarDeBaja: (Inmueble) -> Unit
+    onDarDeBaja: (Inmueble) -> Unit,
+    onSeleccionarFoto: (Inmueble) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -260,7 +262,8 @@ private fun ListadoInmuebles(
                         inmueble = inmueble,
                         onModificar = onModificar,
                         onDarDeBaja = onDarDeBaja,
-                        onVerDetalle = onVerDetalle
+                        onVerDetalle = onVerDetalle,
+                        onSeleccionarFoto = onSeleccionarFoto
                     )
                 }
                 if (mostrarPie) {

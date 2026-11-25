@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gestionalquileres.data.repository.TipoFoto
+import com.example.gestionalquileres.domain.model.TipoFoto
 
 /** Carga la foto grande solo cuando el usuario la pide. Mientras tanto muestra la miniatura. */
 @Composable

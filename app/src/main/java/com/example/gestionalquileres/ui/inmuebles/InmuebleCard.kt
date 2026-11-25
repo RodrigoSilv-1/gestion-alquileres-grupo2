@@ -15,8 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.example.gestionalquileres.data.repository.TipoFoto
-import com.example.gestionalquileres.gestionalquileres.ui.common.FotoCompletaDialog
+import com.example.gestionalquileres.domain.model.TipoFoto
+import com.example.gestionalquileres.ui.common.FotoCompletaDialog
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inmueble
-import com.example.gestionalquileres.gestionalquileres.ui.common.ImagenBase64
+import com.example.gestionalquileres.ui.common.ImagenBase64
 import com.example.gestionalquileres.ui.theme.ExitoVerde
 
 // Tarjeta del inmueble
@@ -47,17 +47,19 @@ fun InmuebleCard(
     inmueble: Inmueble,
     onModificar: (Inmueble) -> Unit,
     onDarDeBaja: (Inmueble) -> Unit,
-    onVerDetalle: (Inmueble) -> Unit
+    onVerDetalle: (Inmueble) -> Unit,
+    onSeleccionarFoto: (Inmueble) -> Unit
 ) {
     var verFoto by remember { mutableStateOf(false) }
     if (verFoto) {
         FotoCompletaDialog(
             tipo = TipoFoto.INMUEBLE,
             idPropietario = inmueble.idInmueble,
-            miniatura = inmueble.fotografia,
+            miniatura = inmueble.fotografia, // Ajusta al nombre del campo de foto/miniatura en Inmueble
             onDismiss = { verFoto = false }
         )
     }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -82,7 +84,10 @@ fun InmuebleCard(
                         .size(64.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                        .clickable(enabled = !inmueble.fotografia.isNullOrBlank()) { verFoto = true },
+                        .clickable(enabled = !inmueble.fotografia.isNullOrBlank()) {
+                            onSeleccionarFoto(inmueble)
+                            verFoto = true
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     ImagenBase64(inmueble.fotografia, Modifier.fillMaxSize()) {

@@ -26,7 +26,9 @@ data class InquilinoUiState(
 
     // Mensajes
     val successMessage: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val fotoCompletaEnVista: String? = null,
+    val cargandoFotoCompleta: Boolean = false
 ) {
     /** Lista que se muestra: `inquilinos` (completa) filtrada en memoria. */
     val inquilinosVisibles: List<Inquilino>

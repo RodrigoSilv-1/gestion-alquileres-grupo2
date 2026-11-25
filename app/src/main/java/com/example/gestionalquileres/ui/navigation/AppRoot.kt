@@ -9,10 +9,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gestionalquileres.gestionalquileres.ui.auth.AuthViewModel
-import com.example.gestionalquileres.gestionalquileres.ui.auth.LoginScreen
-import com.example.gestionalquileres.gestionalquileres.ui.auth.RegisterScreen
-import com.example.gestionalquileres.gestionalquileres.ui.common.LoadingScreen
+import com.example.gestionalquileres.ui.auth.AuthViewModel
+import com.example.gestionalquileres.ui.auth.LoginScreen
+import com.example.gestionalquileres.ui.auth.RegisterScreen
+import com.example.gestionalquileres.ui.common.LoadingScreen
 
 /**
  * Raíz de la app: decide qué mostrar según el estado de la sesión

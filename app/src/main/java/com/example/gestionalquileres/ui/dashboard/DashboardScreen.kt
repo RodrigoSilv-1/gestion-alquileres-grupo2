@@ -39,7 +39,7 @@ import com.example.gestionalquileres.domain.comoMonto
 import com.example.gestionalquileres.domain.model.CobranzaMes
 import com.example.gestionalquileres.domain.model.Deudor
 import com.example.gestionalquileres.domain.model.ResumenGeneral
-import com.example.gestionalquileres.gestionalquileres.ui.common.AppTopBar
+import com.example.gestionalquileres.ui.common.AppTopBar
 import com.example.gestionalquileres.ui.theme.ExitoVerde
 import java.time.YearMonth
 import java.time.format.TextStyle

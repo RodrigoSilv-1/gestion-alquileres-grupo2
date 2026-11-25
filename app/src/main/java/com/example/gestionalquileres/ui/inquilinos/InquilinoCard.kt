@@ -26,20 +26,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.example.gestionalquileres.data.repository.TipoFoto
-import com.example.gestionalquileres.gestionalquileres.ui.common.FotoCompletaDialog
+import com.example.gestionalquileres.domain.model.TipoFoto
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inquilino
-import com.example.gestionalquileres.gestionalquileres.ui.common.ImagenBase64
+import com.example.gestionalquileres.ui.common.FotoCompletaDialog
+import com.example.gestionalquileres.ui.common.ImagenBase64
 
 @Composable
 fun InquilinoCard(
     inquilino: Inquilino,
     onModificar: (Inquilino) -> Unit,
-    onDarDeBaja: (Inquilino) -> Unit
+    onDarDeBaja: (Inquilino) -> Unit,
+    onSeleccionarFoto: (Inquilino) -> Unit
 ) {
     var verFoto by remember { mutableStateOf(false) }
 
@@ -67,7 +68,10 @@ fun InquilinoCard(
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
-                    .clickable(enabled = !inquilino.fotografia.isNullOrBlank()) { verFoto = true }
+                    .clickable(enabled = !inquilino.fotografia.isNullOrBlank()) {
+                        onSeleccionarFoto(inquilino)
+                        verFoto = true
+                    }
             ) {
                 Box(
                     modifier = Modifier

@@ -6,7 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.gestionalquileres.gestionalquileres.ui.dashboard.DashboardScreen
+import com.example.gestionalquileres.ui.dashboard.DashboardScreen
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.ui.contrato.ContratoScreen

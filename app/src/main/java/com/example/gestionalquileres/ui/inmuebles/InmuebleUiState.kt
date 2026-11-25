@@ -37,7 +37,8 @@ data class InmuebleUiState(
 
     // Mensajes
     val successMessage: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val fotoCompletaEnVista: String? = null,
 ) {
     /** Lista que se muestra: `inmuebles` (completa) filtrada en memoria, sin consultar Firestore. */
     val hayMas: Boolean get() = siguientePagina != null

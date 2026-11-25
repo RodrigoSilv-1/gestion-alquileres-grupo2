@@ -13,6 +13,10 @@ import com.example.gestionalquileres.domain.model.Recibo
 import com.example.gestionalquileres.domain.repository.ReciboRepository
 import java.util.UUID
 import javax.inject.Inject
+import com.example.gestionalquileres.domain.model.CursorPagina
+import com.example.gestionalquileres.domain.model.EstadoPago
+import com.example.gestionalquileres.domain.model.FiltroRecibos
+import com.example.gestionalquileres.domain.model.Pagina
 
 class ReciboRepositoryImpl @Inject constructor(
     private val apiService: ApiService,
@@ -20,6 +24,8 @@ class ReciboRepositoryImpl @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val syncManager: SyncManager
 ) : ReciboRepository {
+
+    private data class CursorReciboId(val ultimoId: String) : CursorPagina
 
     override suspend fun generarYGuardarRecibo(reciboParcial: Recibo): AppResult<Recibo> {
         return safeApiCall {
@@ -110,11 +116,85 @@ class ReciboRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun obtenerPagina(
+        filtro: FiltroRecibos,
+        limite: Int,
+        despues: CursorPagina?
+    ): AppResult<Pagina<Recibo>> {
+        return safeApiCall {
+            val todos = when (val res = obtenerTodosLosRecibos()) {
+                is AppResult.Exito -> res.valor
+                is AppResult.Error -> throw res.excepcion
+            }
+
+            val numeroBuscado = filtro.numero?.trim()?.takeIf { it.isNotEmpty() }
+            val filtrados = if (numeroBuscado != null) {
+                todos.filter { recibo ->
+                    recibo.numeroUnico.equals(numeroBuscado, ignoreCase = true)
+                }
+            } else {
+                todos.filter { recibo ->
+                    val coincideContrato = filtro.idContrato.isNullOrBlank() ||
+                            recibo.idContrato == filtro.idContrato
+
+                    val coincideEstado = filtro.estado == null ||
+                            recibo.estadoPago.equals(filtro.estado.valor, ignoreCase = true) ||
+                            recibo.estadoPago.equals(filtro.estado.name, ignoreCase = true)
+
+                    val fechaRecibo = recibo.fechaEmision.take(10)
+                    val desdeFiltro = filtro.desde?.trim()?.takeIf { it.isNotEmpty() }
+                    val hastaFiltro = filtro.hasta?.trim()?.takeIf { it.isNotEmpty() }
+
+                    val coincideDesde = desdeFiltro == null ||
+                            (fechaRecibo.length == 10 && fechaRecibo >= desdeFiltro)
+
+                    val coincideHasta = hastaFiltro == null ||
+                            (fechaRecibo.length == 10 && fechaRecibo <= hastaFiltro)
+
+                    coincideContrato && coincideEstado && coincideDesde && coincideHasta
+                }
+            }
+
+            val ordenados = filtrados.sortedByDescending { it.idRecibo }
+            val cursorId = (despues as? CursorReciboId)?.ultimoId
+            val inicioIndex = if (cursorId != null) {
+                val idx = ordenados.indexOfFirst { it.idRecibo == cursorId }
+                if (idx >= 0) idx + 1 else 0
+            } else {
+                0
+            }
+
+            val tamano = limite.coerceAtLeast(1)
+            val rebanada = if (inicioIndex < ordenados.size) {
+                ordenados.drop(inicioIndex).take(tamano + 1)
+            } else {
+                emptyList()
+            }
+
+            val hayMas = rebanada.size > tamano
+            val itemsPagina = if (hayMas) rebanada.take(tamano) else rebanada
+            val siguienteCursor = if (hayMas && itemsPagina.isNotEmpty()) {
+                CursorReciboId(ultimoId = itemsPagina.last().idRecibo)
+            } else {
+                null
+            }
+
+            Pagina(
+                items = itemsPagina,
+                siguiente = siguienteCursor
+            )
+        }
+    }
+
     override suspend fun actualizarEstadoPago(
         idRecibo: String,
         nuevoEstado: String
     ): AppResult<Unit> {
-        if (nuevoEstado != Recibo.ESTADO_PENDIENTE && nuevoEstado != Recibo.ESTADO_COBRADO) {
+        val esValido = nuevoEstado.equals(EstadoPago.PENDIENTE.valor, ignoreCase = true) ||
+                nuevoEstado.equals(EstadoPago.PAGADO.valor, ignoreCase = true) ||
+                nuevoEstado.equals("COBRADO", ignoreCase = true)
+
+        if (!esValido) {
             return AppResult.Error(IllegalArgumentException("El estado del recibo no es válido."))
         }
 

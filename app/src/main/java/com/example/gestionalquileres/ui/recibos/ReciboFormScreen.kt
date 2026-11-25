@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.input.ImeAction
-import com.example.gestionalquileres.gestionalquileres.ui.common.CampoTexto
+import com.example.gestionalquileres.ui.common.CampoTexto
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,7 +57,7 @@ fun RegistrarReciboScreen(
 
     val guardar: () -> Unit = {
         formState.contratoSeleccionado?.let { contrato ->
-            if (!uiState.isLoading) onGuardar(contrato, formState.agua, formState.luz, formState.ipc)
+            if (!uiState.isLoading) onGuardar(contrato, formState.agua, formState.luz, formState.mantenimiento)
         }
     }
 
@@ -127,7 +127,7 @@ fun RegistrarReciboScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         CampoTexto(
-            formState.ipc, { formState = formState.copy(ipc = limpiarMonto(it)) },
+            formState.mantenimiento, { formState = formState.copy(mantenimiento = limpiarMonto(it)) },
             "IPC (Ajuste)", KeyboardType.Decimal,
             imeAction = ImeAction.Done,
             onDone = guardar

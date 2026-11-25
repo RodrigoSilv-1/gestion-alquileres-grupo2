@@ -36,6 +36,8 @@ class ContratoRepositoryImpl @Inject constructor(
         private const val KEY_CONTRATOS_JSON = "contratos_cache_json"
     }
 
+    private data class CursorContratoId(val ultimoId: String) : CursorPagina
+
     private suspend fun guardarCache(lista: List<Contrato>) {
         cacheMutex.withLock {
             contratosEnMemoria = lista
@@ -122,11 +124,11 @@ class ContratoRepositoryImpl @Inject constructor(
                 leerCache().filter { it.active }
             }
 
-            // Ordena del más reciente al más antiguo (ajusta la clave si tu modelo usa otro campo de orden)
             val ordenados = activos.sortedByDescending { it.idContrato }
 
-            val inicioIndex = if (despues != null) {
-                val indiceCursor = ordenados.indexOfFirst { it.idContrato == despues.id }
+            val cursorId = (despues as? CursorContratoId)?.ultimoId
+            val inicioIndex = if (cursorId != null) {
+                val indiceCursor = ordenados.indexOfFirst { it.idContrato == cursorId }
                 if (indiceCursor >= 0) indiceCursor + 1 else 0
             } else {
                 0
@@ -142,15 +144,14 @@ class ContratoRepositoryImpl @Inject constructor(
             val hayMas = rebanada.size > tamano
             val itemsPagina = if (hayMas) rebanada.take(tamano) else rebanada
             val siguienteCursor = if (hayMas && itemsPagina.isNotEmpty()) {
-                CursorPagina(id = itemsPagina.last().idContrato)
+                CursorContratoId(ultimoId = itemsPagina.last().idContrato)
             } else {
                 null
             }
 
             Pagina(
                 items = itemsPagina,
-                siguienteCursor = siguienteCursor,
-                hayMas = hayMas
+                siguiente = siguienteCursor
             )
         }
     }
@@ -168,7 +169,7 @@ class ContratoRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun obtenerHistorialCompleto(): AppResult<List<Contrato>> {
+    suspend fun obtenerHistorialCompleto(): AppResult<List<Contrato>> {
         return safeApiCall {
             if (networkMonitor.isCurrentlyOnline()) {
                 val remotos = apiService.obtenerContratos()
@@ -209,6 +210,10 @@ class ContratoRepositoryImpl @Inject constructor(
             }
             guardarCache(actualizada)
         }
+    }
+
+    override suspend fun reconstruirOcupacion(): AppResult<Int> {
+        return safeApiCall { 0 }
     }
 
     private fun ContratoDto.aDomain(): Contrato {

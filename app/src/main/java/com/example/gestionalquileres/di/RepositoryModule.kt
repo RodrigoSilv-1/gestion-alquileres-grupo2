@@ -2,10 +2,12 @@ package com.example.gestionalquileres.di
 
 import com.example.gestionalquileres.data.repository.ContratoRepositoryImpl
 import com.example.gestionalquileres.data.repository.DashboardRepositoryImpl
+import com.example.gestionalquileres.data.repository.FotoRepositoryImpl
 import com.example.gestionalquileres.data.repository.InmuebleRepositoryImpl
 import com.example.gestionalquileres.data.repository.InquilinoRepositoryImpl
 import com.example.gestionalquileres.data.repository.ReciboRepositoryImpl
 import com.example.gestionalquileres.data.repository.UnidadAlquilableRepositoryImpl
+import com.example.gestionalquileres.domain.model.FotoRepository
 import com.example.gestionalquileres.domain.repository.ContratoRepository
 import com.example.gestionalquileres.domain.repository.DashboardRepository
 import com.example.gestionalquileres.domain.repository.InmuebleRepository
@@ -57,4 +59,10 @@ abstract class RepositoryModule {
     abstract fun bindDashboardRepository(
         impl: DashboardRepositoryImpl
     ): DashboardRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFotoRepository(
+        impl: FotoRepositoryImpl
+    ): FotoRepository
 }

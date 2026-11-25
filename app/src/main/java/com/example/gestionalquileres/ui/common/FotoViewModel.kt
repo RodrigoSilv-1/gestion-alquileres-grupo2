@@ -2,8 +2,8 @@ package com.example.gestionalquileres.ui.common
 
 import androidx.lifecycle.ViewModel
 import com.example.gestionalquileres.domain.model.AppResult
-import com.example.gestionalquileres.data.repository.FotoRepository
-import com.example.gestionalquileres.data.repository.TipoFoto
+import com.example.gestionalquileres.domain.model.FotoRepository
+import com.example.gestionalquileres.domain.model.TipoFoto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 

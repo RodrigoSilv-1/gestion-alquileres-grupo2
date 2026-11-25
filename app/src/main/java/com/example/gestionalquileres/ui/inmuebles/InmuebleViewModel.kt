@@ -2,15 +2,17 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.data.repository.FotoRepository
+import com.example.gestionalquileres.domain.model.FotoRepository
 import com.example.gestionalquileres.data.repository.InmuebleRepositoryImpl
 import com.example.gestionalquileres.data.repository.UnidadAlquilableRepositoryImpl
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.TipoFoto
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
+import com.example.gestionalquileres.domain.model.claveDireccion
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
+import com.example.gestionalquileres.domain.model.sincronizar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +25,7 @@ import javax.inject.Inject
 class InmuebleViewModel @Inject constructor(
     private val repository: InmuebleRepositoryImpl,
     private val unidadRepository: UnidadAlquilableRepositoryImpl,
-    private val fotoRepository: FotoRepository
+    private val fotoRepository: FotoRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InmuebleUiState())
@@ -404,5 +406,32 @@ class InmuebleViewModel @Inject constructor(
         const val MENSAJE_DUPLICADO_DE_BAJA =
             "Esa dirección pertenece a un inmueble dado de baja. " +
                     "Usa otra dirección o reactívalo desde \"Registrar\"."
+    }
+
+    fun cargarFotoCompleta(tipo: TipoFoto, idPropietario: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            when (val resultado = fotoRepository.obtener(tipo, idPropietario)) {
+                is AppResult.Exito -> _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        fotoCompletaEnVista = resultado.valor
+                    )
+                }
+                is AppResult.Error -> _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = resultado.excepcion.message ?: "No se pudo cargar la foto."
+                    )
+                }
+            }
+        }
+    }
+
+    fun alSeleccionarFotoMiniatura(inmueble: Inmueble) {
+        cargarFotoCompleta(
+            tipo = TipoFoto.INMUEBLE,
+            idPropietario = inmueble.idInmueble // Ajusta si tu campo se llama distinto, ej. inmueble.id
+        )
     }
 }

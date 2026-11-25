@@ -34,7 +34,6 @@ class UnidadAlquilableRepositoryImpl @Inject constructor(
                 unidadIdFiltro = "eq.$unidadId",
                 body = ActualizarPrecioRequest(nuevoPrecio)
             )
-            Unit
         }
     }
 
@@ -49,5 +48,14 @@ class UnidadAlquilableRepositoryImpl @Inject constructor(
             estaOcupada = estaOcupada,
             precioRenta = precioRenta
         )
+    }
+
+    override suspend fun tieneUnidadesOcupadas(inmuebleId: String): AppResult<Boolean> {
+        return safeApiCall {
+            when (val resultado = obtenerUnidadesPorInmueble(inmuebleId)) {
+                is AppResult.Exito -> resultado.valor.any { it.estaOcupada }
+                is AppResult.Error -> throw resultado.excepcion
+            }
+        }
     }
 }

@@ -28,8 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inmueble
-import com.example.gestionalquileres.gestionalquileres.ui.common.CampoTexto
-import com.example.gestionalquileres.gestionalquileres.ui.common.FotoPicker
+import com.example.gestionalquileres.ui.common.CampoTexto
+import com.example.gestionalquileres.ui.common.FotoPicker
 
 @Composable
 fun RegistrarInmuebleScreen(

@@ -19,10 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.gestionalquileres.gestionalquileres.ui.auth.components.AuthBackground
-import com.example.gestionalquileres.gestionalquileres.ui.auth.components.AuthErrorMessage
-import com.example.gestionalquileres.gestionalquileres.ui.auth.components.AuthTextField
-import com.example.gestionalquileres.gestionalquileres.ui.auth.components.GoogleSignInButton
+import com.example.gestionalquileres.ui.auth.components.AuthBackground
+import com.example.gestionalquileres.ui.auth.components.AuthErrorMessage
+import com.example.gestionalquileres.ui.auth.components.AuthTextField
+import com.example.gestionalquileres.ui.auth.components.GoogleSignInButton
 
 @Composable
 fun LoginScreen(

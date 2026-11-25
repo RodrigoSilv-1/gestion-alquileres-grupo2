@@ -2,6 +2,7 @@ package com.example.gestionalquileres.ui.recibos
 
 import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.CursorPagina
+import com.example.gestionalquileres.domain.model.EstadoPago
 import com.example.gestionalquileres.domain.model.FiltroRecibos
 import com.example.gestionalquileres.domain.model.Recibo
 
@@ -43,8 +44,8 @@ data class ReciboUiState(
 
             return recibos.filter { recibo ->
                 val coincideEstado = when (filtroEstado) {
-                    FILTRO_PENDIENTES -> recibo.estadoPago == Recibo.ESTADO_PENDIENTE
-                    FILTRO_COBRADOS -> recibo.estadoPago == Recibo.ESTADO_COBRADO
+                    FILTRO_PENDIENTES -> recibo.estado() == EstadoPago.PENDIENTE
+                    FILTRO_COBRADOS -> recibo.estado() == EstadoPago.PAGADO
                     else -> true
                 }
 

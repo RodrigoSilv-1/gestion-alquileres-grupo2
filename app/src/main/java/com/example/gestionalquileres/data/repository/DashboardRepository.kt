@@ -25,7 +25,7 @@ class DashboardRepositoryImpl @Inject constructor(
 ) : DashboardRepository {
 
     /** "Cobrado" es el valor antiguo que EstadoPago.desde() ya trata como pagado. */
-    private val estadosPagado = listOf(EstadoPago.PAGADO.valor, "Cobrado", Recibo.ESTADO_COBRADO)
+    private val estadosPagado = listOf(EstadoPago.PAGADO.valor, "Cobrado")
 
     private fun List<Recibo>.entre(desde: String, hasta: String): List<Recibo> =
         filter { recibo ->
@@ -58,7 +58,7 @@ class DashboardRepositoryImpl @Inject constructor(
 
             val recibos = recibosDef.await()
             val (cantidadPendientes, montoPendiente) = recibos
-                .filter { it.estadoPago == EstadoPago.PENDIENTE.valor || it.estadoPago == Recibo.ESTADO_PENDIENTE }
+                .filter { it.estadoPago == EstadoPago.PENDIENTE.valor }
                 .contarYSumar()
 
             val cobradoMes = recibos
@@ -90,7 +90,7 @@ class DashboardRepositoryImpl @Inject constructor(
                 .contarYSumar()
 
             val (cantidadPendientes, montoPorCobrar) = recibosMes
-                .filter { it.estadoPago == EstadoPago.PENDIENTE.valor || it.estadoPago == Recibo.ESTADO_PENDIENTE }
+                .filter { it.estadoPago == EstadoPago.PENDIENTE.valor }
                 .contarYSumar()
 
             CobranzaMes(
@@ -117,7 +117,7 @@ class DashboardRepositoryImpl @Inject constructor(
     /** Agrupa los recibos pendientes por contrato y devuelve los de mayor deuda. */
     private fun mayoresDeudores(recibos: List<Recibo>): List<Deudor> =
         recibos
-            .filter { it.estadoPago == EstadoPago.PENDIENTE.valor || it.estadoPago == Recibo.ESTADO_PENDIENTE }
+            .filter { it.estadoPago == EstadoPago.PENDIENTE.valor }
             .take(MAX_PENDIENTES_LEIDOS)
             .groupBy { it.idContrato }
             .map { (idContrato, lista) ->

@@ -41,7 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inquilino
-import com.example.gestionalquileres.gestionalquileres.ui.common.AppTopBar
+import com.example.gestionalquileres.ui.common.AppTopBar
 
 // Pantalla principal: decide qué se muestra (listado, registro o edición)
 @Composable
@@ -116,7 +116,8 @@ fun InquilinoScreen(
                     onBuscar = viewModel::buscar,
                     onMostrarTodos = viewModel::mostrarTodos,
                     onModificar = viewModel::seleccionarInquilinoParaEditar,
-                    onDarDeBaja = viewModel::seleccionarInquilinoParaBaja
+                    onDarDeBaja = viewModel::seleccionarInquilinoParaBaja,
+                    onSeleccionarFoto = viewModel::alSeleccionarFotoMiniatura
                 )
             }
         }
@@ -169,7 +170,8 @@ private fun ListadoInquilinos(
     onBuscar: () -> Unit,
     onMostrarTodos: () -> Unit,
     onModificar: (Inquilino) -> Unit,
-    onDarDeBaja: (Inquilino) -> Unit
+    onDarDeBaja: (Inquilino) -> Unit,
+    onSeleccionarFoto: (Inquilino) -> Unit
 ) {
     val visibles = uiState.inquilinosVisibles
 
@@ -220,7 +222,8 @@ private fun ListadoInquilinos(
                     InquilinoCard(
                         inquilino = inquilino,
                         onModificar = onModificar,
-                        onDarDeBaja = onDarDeBaja
+                        onDarDeBaja = onDarDeBaja,
+                        onSeleccionarFoto = onSeleccionarFoto
                     )
                 }
             }

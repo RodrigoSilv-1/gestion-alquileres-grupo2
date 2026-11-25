@@ -30,7 +30,7 @@ class AuthViewModel @Inject constructor(
         email: String,
         password: String,
         confirmPassword: String,
-        role: UserRole
+        role: UserRole = UserRole.SECRETARIO // opcional si quieres conservar la firma externa
     ) {
         when {
             email.trim().isEmpty() -> showError("Ingresa tu correo.")
@@ -40,7 +40,7 @@ class AuthViewModel @Inject constructor(
                 viewModelScope.launch {
                     _uiState.value = AuthUiState(isLoading = true)
 
-                    repository.register(email.trim(), password, role)
+                    repository.register(email.trim(), password)
                         .onSuccess { user ->
                             _uiState.value = AuthUiState(currentUser = user)
                         }
@@ -93,12 +93,12 @@ class AuthViewModel @Inject constructor(
 
     fun signInWithGoogle(
         idToken: String,
-        role: UserRole
+        role: UserRole = UserRole.SECRETARIO // opcional si quieres conservar la firma externa
     ) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(isLoading = true)
 
-            repository.signInWithGoogle(idToken, role)
+            repository.signInWithGoogle(idToken)
                 .onSuccess { user ->
                     _uiState.value = AuthUiState(currentUser = user)
                 }

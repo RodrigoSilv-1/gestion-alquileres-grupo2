@@ -135,7 +135,7 @@ class ReciboViewModel @Inject constructor(
                 luz = luz,
                 mantenimiento = mantenimiento,
                 montoTotal = total,
-                estadoPago = Recibo.ESTADO_PENDIENTE
+                estadoPago = EstadoPago.PENDIENTE.valor
             )
 
             reciboRepository.generarYGuardarRecibo(reciboParcial)
@@ -238,9 +238,9 @@ class ReciboViewModel @Inject constructor(
 
     fun cambiarEstadoPago(recibo: Recibo) {
         if (_uiState.value.idReciboActualizando != null) return
-        val estaCobrado = recibo.estadoPago == Recibo.ESTADO_COBRADO || recibo.estado() == EstadoPago.PAGADO
-        val nuevoEstadoTexto = if (estaCobrado) Recibo.ESTADO_PENDIENTE else Recibo.ESTADO_COBRADO
+        val estaCobrado = recibo.estado() == EstadoPago.PAGADO
         val nuevoEstadoEnum = if (estaCobrado) EstadoPago.PENDIENTE else EstadoPago.PAGADO
+        val nuevoEstadoTexto = nuevoEstadoEnum.valor
 
         _uiState.update { it.copy(idReciboActualizando = recibo.idRecibo, errorMessage = null) }
 

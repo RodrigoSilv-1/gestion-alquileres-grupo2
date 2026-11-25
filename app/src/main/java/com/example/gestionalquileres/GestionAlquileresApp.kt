@@ -3,8 +3,8 @@ package com.example.gestionalquileres
 import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import com.example.gestionalquileres.gestionalquileres.ui.common.FotoBase64Fetcher
-import com.example.gestionalquileres.gestionalquileres.ui.common.FotoBase64Keyer
+import com.example.gestionalquileres.ui.common.FotoBase64Fetcher
+import com.example.gestionalquileres.ui.common.FotoBase64Keyer
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp

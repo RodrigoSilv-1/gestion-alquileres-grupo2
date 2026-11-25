@@ -107,6 +107,8 @@ interface ApiService {
         @Query("id") unidadIdFiltro: String, // Pasar como: "eq.$unidadId"
         @Body body: ActualizarOcupacionRequest
     )
+
+
 }
 
 // Clases de petición (Request DTOs) adaptadas a Supabase
