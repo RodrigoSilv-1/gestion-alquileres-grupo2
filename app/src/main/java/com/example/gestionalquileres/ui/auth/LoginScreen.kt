@@ -12,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -31,7 +33,10 @@ fun LoginScreen(
     onGoToRegister: () -> Unit,
     onClearError: () -> Unit,
     onGoogleSignIn: (String) -> Unit,
-    onGoogleError: (String) -> Unit
+    onGoogleError: (String) -> Unit,
+    huellaVisible: Boolean,
+    onLoginConHuella: () -> Unit,
+    onOlvidarHuella: () -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -92,6 +97,27 @@ fun LoginScreen(
             )
         ) {
             Text("Iniciar sesión", style = MaterialTheme.typography.labelLarge)
+        }
+
+        if (huellaVisible) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onLoginConHuella,
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, Color.White),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+            ) {
+                Text("Entrar con huella", style = MaterialTheme.typography.labelLarge)
+            }
+
+            TextButton(onClick = onOlvidarHuella) {
+                Text(
+                    text = "Olvidar huella en este dispositivo",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))

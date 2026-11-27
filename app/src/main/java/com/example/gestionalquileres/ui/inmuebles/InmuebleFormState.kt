@@ -6,11 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.MAX_UNIDADES_POR_INMUEBLE
+import com.example.gestionalquileres.domain.model.DISTRITOS_LIMA
+import com.example.gestionalquileres.domain.model.aDistritoLimaOficial
 
 /** Estado del formulario de inmueble. Sin argumentos = alta; con [inmueble] = edición. */
 @Stable
 class InmuebleFormState(inmueble: Inmueble? = null) {
-    var distrito by mutableStateOf(inmueble?.distrito.orEmpty())
+    var distrito by mutableStateOf(inmueble?.distrito?.aDistritoLimaOficial().orEmpty())
     var direccion by mutableStateOf(inmueble?.direccion.orEmpty())
     var numeroDireccion by mutableStateOf(inmueble?.numeroDireccion.orEmpty())
     var codigoPostal by mutableStateOf(inmueble?.codigoPostal.orEmpty())
@@ -36,7 +38,7 @@ class InmuebleFormState(inmueble: Inmueble? = null) {
 
     /** En el alta se exige al menos 1 piso, 1 unidad por piso y no superar el límite. */
     fun esValido(esNuevo: Boolean): Boolean =
-        distrito.isNotBlank() &&
+        distrito in DISTRITOS_LIMA &&
                 direccion.isNotBlank() &&
                 codigoPostal.isNotBlank() &&
                 (!esNuevo || (

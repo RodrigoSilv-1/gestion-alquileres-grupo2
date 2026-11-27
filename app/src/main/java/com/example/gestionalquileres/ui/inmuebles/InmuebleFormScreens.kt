@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import com.example.gestionalquileres.domain.model.DISTRITOS_LIMA
+import com.example.gestionalquileres.ui.common.CampoDesplegable
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.text.input.ImeAction
@@ -85,7 +87,13 @@ private fun InmuebleFormulario(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CampoTexto(form.distrito, { form.distrito = it }, "Distrito")
+        CampoDesplegable(
+            valor = form.distrito,
+            opciones = DISTRITOS_LIMA,
+            onSeleccion = { form.distrito = it },
+            etiqueta = "Distrito",
+            ayuda = if (form.distrito.isBlank()) "Selecciona un distrito de Lima" else null
+        )
         CampoTexto(form.direccion, { form.direccion = it }, "Dirección")
         CampoTexto(form.numeroDireccion, { form.numeroDireccion = it }, "Número de Dirección", KeyboardType.Number)
         CampoTexto(

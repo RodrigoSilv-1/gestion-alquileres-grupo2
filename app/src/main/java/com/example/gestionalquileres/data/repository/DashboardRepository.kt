@@ -9,6 +9,8 @@ import com.example.gestionalquileres.domain.model.Recibo
 import com.example.gestionalquileres.domain.model.ResumenGeneral
 import com.example.gestionalquileres.domain.redondearMonto
 import com.example.gestionalquileres.domain.repository.DashboardRepository
+import com.example.gestionalquileres.domain.model.IngresoMensual
+import java.time.YearMonth
 import com.example.gestionalquileres.domain.sumarMontos
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -99,6 +101,30 @@ class DashboardRepositoryImpl @Inject constructor(
                 montoCobrado = montoCobrado,
                 montoPorCobrar = montoPorCobrar,
                 mayoresDeudores = mayoresDeudores(recibos)
+            )
+        }
+    }
+
+    /** Cobrado y por cobrar de cada uno de los últimos [cantidadMeses] meses (el más antiguo primero). */
+    override suspend fun obtenerIngresosUltimosMeses(
+        cantidadMeses: Int
+    ): AppResult<List<IngresoMensual>> = appResultOf {
+        val recibos = todosLosRecibos()
+        val mesActual = YearMonth.now()
+
+        (cantidadMeses - 1 downTo 0).map { atras ->
+            val mes = mesActual.minusMonths(atras.toLong())
+            val prefijo = mes.toString() // "2026-11", igual al inicio de fechaEmision
+            val delMes = recibos.filter { it.fechaEmision.startsWith(prefijo) }
+
+            IngresoMensual(
+                mes = mes,
+                montoCobrado = delMes
+                    .filter { it.estadoPago in estadosPagado }
+                    .contarYSumar().second,
+                montoPorCobrar = delMes
+                    .filter { it.estadoPago == EstadoPago.PENDIENTE.valor }
+                    .contarYSumar().second
             )
         }
     }

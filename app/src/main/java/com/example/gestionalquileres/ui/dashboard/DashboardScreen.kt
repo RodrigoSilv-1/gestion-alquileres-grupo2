@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import com.example.gestionalquileres.domain.model.IngresoMensual
+import com.example.gestionalquileres.domain.sumarMontos
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -93,6 +95,7 @@ fun DashboardScreen(
                 onMesAnterior = { viewModel.cambiarMes(-1) },
                 onMesSiguiente = { viewModel.cambiarMes(1) }
             )
+            SeccionTendencia(uiState.ingresos, uiState.cargandoIngresos)
         }
     }
 }
@@ -270,6 +273,45 @@ private fun ListaDeudores(deudores: List<Deudor>) {
                     fontWeight = FontWeight.Bold
                 )
             }
+        }
+    }
+}
+
+// ---------- Dashboard 3: Tendencia de ingresos ----------
+
+@Composable
+private fun ColumnScope.SeccionTendencia(ingresos: List<IngresoMensual>, cargando: Boolean) {
+    Text("Tendencia de ingresos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+    if (ingresos.isEmpty()) {
+        if (cargando) CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+        return
+    }
+
+    TarjetaDashboard {
+        val hayDatos = ingresos.any { it.montoCobrado > 0 || it.montoPorCobrar > 0 }
+        if (!hayDatos) {
+            Text("Aún no hay recibos en los últimos ${ingresos.size} meses.", style = MaterialTheme.typography.bodyMedium)
+        } else {
+            Text(
+                "Últimos ${ingresos.size} meses",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                LeyendaGrafico(ExitoVerde, "Cobrado")
+                LeyendaGrafico(MaterialTheme.colorScheme.error, "Por cobrar")
+            }
+            GraficoLineaIngresos(
+                ingresos = ingresos,
+                modifier = Modifier.fillMaxWidth().height(240.dp)
+            )
+            val total = sumarMontos(*ingresos.map { it.montoCobrado }.toDoubleArray())
+            Text(
+                "Total cobrado en el periodo: ${total.comoMonto()}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

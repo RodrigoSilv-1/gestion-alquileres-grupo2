@@ -8,6 +8,12 @@ import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
+import android.security.keystore.KeyPermanentlyInvalidatedException
+import com.example.gestionalquileres.data.auth.BiometricCredentialStore
+import com.example.gestionalquileres.data.auth.CredencialesGuardadas
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import javax.crypto.Cipher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,11 +22,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: AuthRepository
+    private val repository: AuthRepository,
+    private val credenciales: BiometricCredentialStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState(isLoading = true))
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    // --- Huella dactilar (flujos aparte: uiState se reinicia en cada operación) ---
+    private val _huellaActivada = MutableStateFlow(credenciales.hayCredenciales())
+    val huellaActivada: StateFlow<Boolean> = _huellaActivada.asStateFlow()
+
+    private val _ofrecerHuella = MutableStateFlow(false)
+    val ofrecerHuella: StateFlow<Boolean> = _ofrecerHuella.asStateFlow()
+
+    /** Credenciales del último login manual, solo en memoria hasta que el usuario decida. */
+    private var credencialesPendientes: CredencialesGuardadas? = null
 
     init {
         loadActiveSession()
@@ -70,24 +87,42 @@ class AuthViewModel @Inject constructor(
                 showError("Ingresa tu contraseña.")
             }
 
-            else -> {
-                viewModelScope.launch {
-                    _uiState.value = AuthUiState(isLoading = true)
+            else -> iniciarSesion(emailLimpio, password, desdeHuella = false)
+        }
+    }
 
-                    repository.login(emailLimpio, password)
-                        .onSuccess { user ->
-                            _uiState.value = AuthUiState(
-                                currentUser = user
-                            )
-                        }
-                        .onFailure { error ->
-                            _uiState.value = AuthUiState(
-                                errorMessage = error.message
-                                    ?: "Credenciales inválidas. Verifica tu correo y contraseña."
-                            )
-                        }
+    private fun iniciarSesion(email: String, password: String, desdeHuella: Boolean) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState(isLoading = true)
+
+            repository.login(email, password)
+                .onSuccess { user ->
+                    _uiState.value = AuthUiState(currentUser = user)
+
+                    // Tras un login manual, ofrecer activar la huella si se puede y aún no está activa
+                    if (!desdeHuella && credenciales.sensorDisponible() && !_huellaActivada.value) {
+                        credencialesPendientes = CredencialesGuardadas(email, password)
+                        _ofrecerHuella.value = true
+                    }
                 }
-            }
+                .onFailure { error ->
+                    val credencialInvalida = error is FirebaseAuthInvalidCredentialsException ||
+                            error is FirebaseAuthInvalidUserException
+
+                    if (desdeHuella && credencialInvalida) {
+                        // La contraseña cambió o la cuenta ya no existe: lo guardado ya no sirve
+                        olvidarHuella()
+                        _uiState.value = AuthUiState(
+                            errorMessage = "Tus datos guardados ya no son válidos. " +
+                                    "Inicia sesión con tu correo y contraseña."
+                        )
+                    } else {
+                        _uiState.value = AuthUiState(
+                            errorMessage = error.message
+                                ?: "Credenciales inválidas. Verifica tu correo y contraseña."
+                        )
+                    }
+                }
         }
     }
 
@@ -132,6 +167,63 @@ class AuthViewModel @Inject constructor(
                     _uiState.value = AuthUiState()
                 }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Huella dactilar
+    // ------------------------------------------------------------------
+
+    fun huellaDisponible(): Boolean = credenciales.sensorDisponible()
+
+    /** Cipher para el diálogo de ACTIVAR. Null si no se pudo preparar. */
+    fun cipherParaActivarHuella(): Cipher? =
+        runCatching { credenciales.cipherParaCifrar() }.getOrNull()
+
+    /** Cipher para el diálogo de LOGIN. Si la clave quedó invalidada, limpia y avisa. */
+    fun cipherParaLoginConHuella(): Cipher? = try {
+        credenciales.cipherParaDescifrar()
+    } catch (e: KeyPermanentlyInvalidatedException) {
+        olvidarHuella()
+        showError("Cambiaron las huellas del teléfono. Inicia sesión con tu contraseña y vuelve a activar la huella.")
+        null
+    } catch (e: Exception) {
+        olvidarHuella()
+        showError("No se pudo usar la huella. Inicia sesión con tu contraseña.")
+        null
+    }
+
+    /** Devuelve true si se guardaron las credenciales. [cipher] ya viene autenticado. */
+    fun activarHuella(cipher: Cipher): Boolean {
+        val pendientes = credencialesPendientes ?: return false
+        return try {
+            credenciales.guardar(cipher, pendientes.correo, pendientes.contrasena)
+            _huellaActivada.value = true
+            descartarOfertaHuella()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun descartarOfertaHuella() {
+        credencialesPendientes = null     // no dejar la contraseña en memoria
+        _ofrecerHuella.value = false
+    }
+
+    fun loginConHuella(cipher: Cipher) {
+        val guardadas = try {
+            credenciales.leer(cipher)
+        } catch (e: Exception) {
+            olvidarHuella()
+            showError("No se pudo usar la huella. Inicia sesión con tu contraseña.")
+            return
+        }
+        iniciarSesion(guardadas.correo, guardadas.contrasena, desdeHuella = true)
+    }
+
+    fun olvidarHuella() {
+        credenciales.borrar()
+        _huellaActivada.value = false
     }
 
     fun showError(message: String) {

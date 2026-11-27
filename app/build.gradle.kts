@@ -94,4 +94,8 @@ dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.google.dagger:hilt-android:${libs.versions.hilt.get()}")
     ksp("com.google.dagger:hilt-compiler:${libs.versions.hilt.get()}")
+
+    testImplementation("junit:junit:4.13.2")
+
+    implementation("androidx.biometric:biometric:1.1.0")
 }
