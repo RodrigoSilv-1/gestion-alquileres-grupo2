@@ -11,6 +11,8 @@ import com.example.gestionalquileres.data.sync.SyncManager
 import com.example.gestionalquileres.ui.navigation.AppRoot
 import com.example.gestionalquileres.ui.theme.GestionAlquileresTheme
 import dagger.hilt.android.AndroidEntryPoint
+import android.content.Intent
+import com.example.gestionalquileres.notificaciones.DestinoNotificacion
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -24,6 +26,8 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Si la app se abrió desde una notificación, anota a qué pantalla ir.
+        if (savedInstanceState == null) DestinoNotificacion.leerDe(intent)
         enableEdgeToEdge()
 
         setContent {
@@ -41,5 +45,12 @@ class MainActivity : FragmentActivity() {
                 AppRoot()
             }
         }
+    }
+
+    /** La app ya estaba abierta y tocaron una notificación. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        DestinoNotificacion.leerDe(intent)
     }
 }

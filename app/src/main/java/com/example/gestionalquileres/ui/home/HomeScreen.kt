@@ -15,6 +15,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.example.gestionalquileres.ui.notificaciones.BotonRevisarAlertas
+import com.example.gestionalquileres.ui.notificaciones.SolicitarPermisoNotificaciones
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +41,8 @@ fun HomeScreen(
 ) {
     val esAdmin = user.role == UserRole.ADMIN.name
     val roleText = if (esAdmin) "Administrador" else "Secretario"
+
+    SolicitarPermisoNotificaciones()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -118,6 +122,8 @@ fun HomeScreen(
                 Button(onClick = onIrRecibos) { Text("Gestión de Recibos") }
                 Button(onClick = onIrDashboard) { Text("Dashboard") }
             }
+
+            BotonRevisarAlertas()
 
             Spacer(modifier = Modifier.height(24.dp))
 
