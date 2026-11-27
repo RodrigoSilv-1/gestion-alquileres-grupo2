@@ -5,6 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import com.example.gestionalquileres.domain.model.IngresoMensual
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import java.time.format.TextStyle
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -199,6 +205,70 @@ fun GraficoBarrasMonto(
             grafico.axisLeft.axisLineColor = colorCuadricula
             grafico.setFitBars(true)
             grafico.animateY(600)
+            grafico.invalidate()
+        }
+    )
+}
+
+/** Líneas: monto cobrado vs. por cobrar en los últimos meses. */
+@Composable
+fun GraficoLineaIngresos(
+    ingresos: List<IngresoMensual>,
+    modifier: Modifier = Modifier
+) {
+    val colorCobrado = ExitoVerde.toArgb()
+    val colorPorCobrar = MaterialTheme.colorScheme.error.toArgb()
+    val colorTexto = MaterialTheme.colorScheme.onSurface.toArgb()
+    val colorCuadricula = MaterialTheme.colorScheme.outlineVariant.toArgb()
+
+    val etiquetas = ingresos.map {
+        it.mes.month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("es-PE"))
+            .replace(".", "")
+            .replaceFirstChar { c -> c.uppercase() }
+    }
+
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            LineChart(context).apply {
+                description.isEnabled = false
+                legend.isEnabled = false            // la leyenda se dibuja en Compose
+                setTouchEnabled(false)              // no bloquea el scroll de la pantalla
+                setNoDataText("Sin datos")
+                setExtraTopOffset(16f)
+                axisRight.isEnabled = false
+                axisLeft.axisMinimum = 0f
+                axisLeft.valueFormatter = object : ValueFormatter() {
+                    override fun getFormattedValue(value: Float): String = "%,.0f".format(Locale.US, value)
+                }
+                xAxis.position = XAxis.XAxisPosition.BOTTOM
+                xAxis.setDrawGridLines(false)
+                xAxis.granularity = 1f
+            }
+        },
+        update = { grafico ->
+            fun conjunto(nombre: String, color: Int, valores: List<Double>) =
+                LineDataSet(
+                    valores.mapIndexed { i, v -> Entry(i.toFloat(), v.toFloat()) },
+                    nombre
+                ).apply {
+                    this.color = color
+                    setCircleColor(color)
+                    lineWidth = 2.5f
+                    circleRadius = 4f
+                    setDrawValues(false)
+                }
+
+            grafico.data = LineData(
+                conjunto("Cobrado", colorCobrado, ingresos.map { it.montoCobrado }),
+                conjunto("Por cobrar", colorPorCobrar, ingresos.map { it.montoPorCobrar })
+            )
+            grafico.xAxis.valueFormatter = IndexAxisValueFormatter(etiquetas)
+            grafico.xAxis.textColor = colorTexto
+            grafico.axisLeft.textColor = colorTexto
+            grafico.axisLeft.gridColor = colorCuadricula
+            grafico.axisLeft.axisLineColor = colorCuadricula
+            grafico.animateX(600)
             grafico.invalidate()
         }
     )

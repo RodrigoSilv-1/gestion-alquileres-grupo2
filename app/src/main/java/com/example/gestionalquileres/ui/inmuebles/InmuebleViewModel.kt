@@ -10,6 +10,7 @@ import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.TipoFoto
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
 import com.example.gestionalquileres.domain.model.claveDireccion
+import com.example.gestionalquileres.domain.model.DISTRITOS_LIMA
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
 import com.example.gestionalquileres.domain.model.sincronizar
@@ -155,6 +156,12 @@ class InmuebleViewModel @Inject constructor(
     fun registrar(inmueble: Inmueble) {
         viewModelScope.launch {
             iniciarOperacion()
+
+            if (inmueble.distrito !in DISTRITOS_LIMA) {
+                fallo(MENSAJE_DISTRITO_INVALIDO, MENSAJE_DISTRITO_INVALIDO)
+                return@launch
+            }
+
             repository.buscarPorDireccion(
                 inmueble.distrito, inmueble.direccion, inmueble.numeroDireccion
             )
@@ -208,6 +215,11 @@ class InmuebleViewModel @Inject constructor(
     fun actualizar(inmueble: Inmueble) {
         viewModelScope.launch {
             iniciarOperacion()
+
+            if (inmueble.distrito !in DISTRITOS_LIMA) {
+                fallo(MENSAJE_DISTRITO_INVALIDO, MENSAJE_DISTRITO_INVALIDO)
+                return@launch
+            }
 
             val original = _uiState.value.inmuebles.firstOrNull { it.idInmueble == inmueble.idInmueble }
             if (original != null && original.claveDireccion == inmueble.claveDireccion) {
@@ -406,6 +418,8 @@ class InmuebleViewModel @Inject constructor(
         const val MENSAJE_DUPLICADO_DE_BAJA =
             "Esa dirección pertenece a un inmueble dado de baja. " +
                     "Usa otra dirección o reactívalo desde \"Registrar\"."
+
+        private const val MENSAJE_DISTRITO_INVALIDO = "Selecciona un distrito válido de Lima."
     }
 
     fun cargarFotoCompleta(tipo: TipoFoto, idPropietario: String) {

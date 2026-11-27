@@ -35,3 +35,10 @@ data class CobranzaMes(
     val totalRecibos: Int get() = recibosPagados + recibosPendientes
     val porcentajeCobrado: Int get() = if (totalRecibos == 0) 0 else recibosPagados * 100 / totalRecibos
 }
+
+/** Ingresos de un mes, para el gráfico de tendencia. */
+data class IngresoMensual(
+    val mes: java.time.YearMonth,
+    val montoCobrado: Double,
+    val montoPorCobrar: Double
+)

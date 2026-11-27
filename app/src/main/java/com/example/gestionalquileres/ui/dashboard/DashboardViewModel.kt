@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import java.time.YearMonth
 import javax.inject.Inject
 
+private const val MESES_TENDENCIA = 6
+
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val dashboardRepository: DashboardRepository
@@ -30,6 +32,7 @@ class DashboardViewModel @Inject constructor(
     fun recargar() {
         cargarResumen()
         cargarCobranza()
+        cargarIngresos()
     }
 
     /** Mueve el mes de la cobranza (-1 anterior, +1 siguiente). No permite meses futuros. */
@@ -70,6 +73,24 @@ class DashboardViewModel @Inject constructor(
                 .onFailure { error ->
                     _uiState.update {
                         it.copy(cargandoCobranza = false, errorMessage = error.message ?: "No se pudo cargar la cobranza.")
+                    }
+                }
+        }
+    }
+
+    private fun cargarIngresos() {
+        _uiState.update { it.copy(cargandoIngresos = true) }
+        viewModelScope.launch {
+            dashboardRepository.obtenerIngresosUltimosMeses(MESES_TENDENCIA)
+                .onSuccess { ingresos ->
+                    _uiState.update { it.copy(ingresos = ingresos, cargandoIngresos = false) }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            cargandoIngresos = false,
+                            errorMessage = error.message ?: "No se pudo cargar la tendencia de ingresos."
+                        )
                     }
                 }
         }
