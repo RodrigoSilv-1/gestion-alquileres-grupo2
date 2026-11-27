@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.EstadoPago
 import com.example.gestionalquileres.domain.model.etiqueta
 import com.example.gestionalquileres.ui.common.CampoFecha
-import com.example.gestionalquileres.ui.common.CampoFecha
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -17,4 +17,14 @@ object ReglasNotificacion {
 
     /** Desde qué día del mes se avisa de contratos sin recibo emitido. */
     const val DIA_RECORDATORIO_EMISION = 1
+
+    /** Si hay más de este número de avisos nuevos a la vez, se agrupan en una sola notificación. */
+    const val MAX_AVISOS_INDIVIDUALES = 3
+
+    /** Líneas visibles en la notificación resumen. */
+    const val MAX_LINEAS_RESUMEN = 6
+
+    /** Hora local (del teléfono) en que se revisan las alertas cada día. */
+    const val HORA_ENVIO = 8
+    const val MINUTO_ENVIO = 0
 }

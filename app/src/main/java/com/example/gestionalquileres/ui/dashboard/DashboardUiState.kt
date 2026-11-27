@@ -1,8 +1,8 @@
 package com.example.gestionalquileres.ui.dashboard
 
 import com.example.gestionalquileres.domain.model.CobranzaMes
-import com.example.gestionalquileres.domain.model.ResumenGeneral
 import com.example.gestionalquileres.domain.model.IngresoMensual
+import com.example.gestionalquileres.domain.model.ResumenGeneral
 import java.time.YearMonth
 
 data class DashboardUiState(

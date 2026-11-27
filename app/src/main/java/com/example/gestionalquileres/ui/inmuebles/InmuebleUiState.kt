@@ -1,8 +1,8 @@
 package com.example.gestionalquileres.ui.inmuebles
 
+import com.example.gestionalquileres.domain.model.CursorPagina
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
-import com.example.gestionalquileres.domain.model.CursorPagina
 import com.example.gestionalquileres.domain.normalizarBusqueda
 
 enum class TipoBusqueda(val etiqueta: String) {

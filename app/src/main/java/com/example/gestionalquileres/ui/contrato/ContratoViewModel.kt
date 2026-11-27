@@ -2,10 +2,6 @@ package com.example.gestionalquileres.ui.contrato
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.domain.repository.ContratoRepository
-import com.example.gestionalquileres.domain.repository.InmuebleRepository
-import com.example.gestionalquileres.domain.repository.InquilinoRepository
-import com.example.gestionalquileres.domain.repository.UnidadAlquilableRepository
 import com.example.gestionalquileres.domain.comoMonto
 import com.example.gestionalquileres.domain.cumpleSolvencia
 import com.example.gestionalquileres.domain.ingresoMinimoRequerido
@@ -16,6 +12,10 @@ import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
+import com.example.gestionalquileres.domain.repository.ContratoRepository
+import com.example.gestionalquileres.domain.repository.InmuebleRepository
+import com.example.gestionalquileres.domain.repository.InquilinoRepository
+import com.example.gestionalquileres.domain.repository.UnidadAlquilableRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

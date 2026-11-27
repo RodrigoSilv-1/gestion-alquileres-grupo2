@@ -10,7 +10,6 @@ import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.CursorPagina
 import com.example.gestionalquileres.domain.model.Pagina
-import com.example.gestionalquileres.domain.model.TAMANO_PAGINA
 import com.example.gestionalquileres.domain.repository.ContratoRepository
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken

@@ -4,16 +4,16 @@ import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.CobranzaMes
 import com.example.gestionalquileres.domain.model.Deudor
 import com.example.gestionalquileres.domain.model.EstadoPago
+import com.example.gestionalquileres.domain.model.IngresoMensual
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.Recibo
 import com.example.gestionalquileres.domain.model.ResumenGeneral
 import com.example.gestionalquileres.domain.redondearMonto
 import com.example.gestionalquileres.domain.repository.DashboardRepository
-import com.example.gestionalquileres.domain.model.IngresoMensual
-import java.time.YearMonth
 import com.example.gestionalquileres.domain.sumarMontos
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import java.time.YearMonth
 import javax.inject.Inject
 
 /** Tope de recibos pendientes que se leen para armar la lista de mayores deudores. */

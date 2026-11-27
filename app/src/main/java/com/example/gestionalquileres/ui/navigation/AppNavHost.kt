@@ -1,15 +1,19 @@
 package com.example.gestionalquileres.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.gestionalquileres.ui.dashboard.DashboardScreen
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
+import com.example.gestionalquileres.notificaciones.DestinoNotificacion
 import com.example.gestionalquileres.ui.contrato.ContratoScreen
+import com.example.gestionalquileres.ui.dashboard.DashboardScreen
 import com.example.gestionalquileres.ui.home.HomeScreen
 import com.example.gestionalquileres.ui.inmuebles.InmuebleScreen
 import com.example.gestionalquileres.ui.inquilinos.InquilinoScreen
@@ -27,6 +31,20 @@ fun AppNavHost(
 ) {
     val navController = rememberNavController()
     val esAdmin = user.role == UserRole.ADMIN.name
+
+    // Si el usuario tocó una notificación, lo lleva a la pantalla que corresponde,
+    // pero solo si su rol tiene esa pantalla.
+    val destinoPendiente by DestinoNotificacion.pendiente.collectAsState()
+    LaunchedEffect(destinoPendiente) {
+        val destino = destinoPendiente ?: return@LaunchedEffect
+        val permitidas = if (esAdmin) {
+            setOf(Rutas.INQUILINOS, Rutas.INMUEBLES, Rutas.CONTRATOS)
+        } else {
+            setOf(Rutas.RECIBOS, Rutas.DASHBOARD)
+        }
+        if (destino in permitidas) navController.irA(destino)
+        DestinoNotificacion.consumir()
+    }
 
     NavHost(navController = navController, startDestination = Rutas.HOME) {
 

@@ -1,6 +1,5 @@
 package com.example.gestionalquileres.domain.repository
 
-import com.example.gestionalquileres.data.remote.safeApiCall
 import com.example.gestionalquileres.domain.model.AppResult
 import com.example.gestionalquileres.domain.model.Contrato
 import com.example.gestionalquileres.domain.model.CursorPagina

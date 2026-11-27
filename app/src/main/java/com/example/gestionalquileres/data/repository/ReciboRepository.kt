@@ -9,20 +9,23 @@ import com.example.gestionalquileres.data.remote.ReciboDto
 import com.example.gestionalquileres.data.remote.safeApiCall
 import com.example.gestionalquileres.data.sync.SyncManager
 import com.example.gestionalquileres.domain.model.AppResult
-import com.example.gestionalquileres.domain.model.Recibo
-import com.example.gestionalquileres.domain.repository.ReciboRepository
-import java.util.UUID
-import javax.inject.Inject
 import com.example.gestionalquileres.domain.model.CursorPagina
 import com.example.gestionalquileres.domain.model.EstadoPago
 import com.example.gestionalquileres.domain.model.FiltroRecibos
 import com.example.gestionalquileres.domain.model.Pagina
+import com.example.gestionalquileres.domain.model.Recibo
+import com.example.gestionalquileres.domain.repository.ReciboRepository
+import com.example.gestionalquileres.notificaciones.IdsNotificacion
+import com.example.gestionalquileres.notificaciones.NotificacionHelper
+import java.util.UUID
+import javax.inject.Inject
 
 class ReciboRepositoryImpl @Inject constructor(
     private val apiService: ApiService,
     private val reciboDao: ReciboDao,
     private val networkMonitor: NetworkMonitor,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val notificacionHelper: NotificacionHelper
 ) : ReciboRepository {
 
     private data class CursorReciboId(val ultimoId: String) : CursorPagina
@@ -226,6 +229,11 @@ class ReciboRepositoryImpl @Inject constructor(
                     entityId = idRecibo,
                     payload = actualizadoEntity
                 )
+            }
+
+            // Si el recibo quedó pagado, ya no hace falta su aviso en la barra de notificaciones.
+            if (EstadoPago.desde(nuevoEstado) == EstadoPago.PAGADO) {
+                notificacionHelper.cancelar(IdsNotificacion.deRecibo(idRecibo))
             }
         }
     }

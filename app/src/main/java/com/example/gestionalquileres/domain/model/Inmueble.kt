@@ -1,7 +1,7 @@
 package com.example.gestionalquileres.domain.model
 
-import java.text.Normalizer
 import com.google.firebase.firestore.Exclude
+import java.text.Normalizer
 
 data class Inmueble(
     val idInmueble: String = "",

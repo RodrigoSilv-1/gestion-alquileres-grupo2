@@ -1,29 +1,35 @@
 package com.example.gestionalquileres.ui.auth
 
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionalquileres.data.auth.AuthRepository
+import com.example.gestionalquileres.data.auth.BiometricCredentialStore
+import com.example.gestionalquileres.data.auth.CredencialesGuardadas
 import com.example.gestionalquileres.domain.model.UserRole
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
-import dagger.hilt.android.lifecycle.HiltViewModel
-import android.security.keystore.KeyPermanentlyInvalidatedException
-import com.example.gestionalquileres.data.auth.BiometricCredentialStore
-import com.example.gestionalquileres.data.auth.CredencialesGuardadas
+import com.example.gestionalquileres.notificaciones.ProgramadorAlertas
+import com.example.gestionalquileres.notificaciones.SesionAlertas
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import javax.crypto.Cipher
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.crypto.Cipher
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repository: AuthRepository,
-    private val credenciales: BiometricCredentialStore
+    private val credenciales: BiometricCredentialStore,
+    private val sesionAlertas: SesionAlertas,
+    private val programadorAlertas: ProgramadorAlertas
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState(isLoading = true))
@@ -41,6 +47,7 @@ class AuthViewModel @Inject constructor(
 
     init {
         loadActiveSession()
+        guardarRolParaAlertas()
     }
 
     fun register(
@@ -224,6 +231,32 @@ class AuthViewModel @Inject constructor(
     fun olvidarHuella() {
         credenciales.borrar()
         _huellaActivada.value = false
+    }
+
+    /**
+     * Enciende el sistema de alertas cuando hay un usuario con sesión y lo apaga cuando esa sesión se cierra.
+     * Funciona mirando el estado, así que cubre cualquier forma de entrar que termine dejando un usuario ahí
+     * (correo, Google, registro, sesión restaurada o huella, según cómo la hayas hecho).
+     */
+    private fun guardarRolParaAlertas() {
+        viewModelScope.launch {
+            var huboSesion = false
+            uiState
+                .map { it.currentUser }
+                .distinctUntilChanged()
+                .collect { user ->
+                    if (user != null) {
+                        val uid = repository.getCurrentUserId() ?: return@collect
+                        val rol = if (user.role == UserRole.ADMIN.name) UserRole.ADMIN else UserRole.SECRETARIO
+                        huboSesion = true
+                        sesionAlertas.guardar(uid, rol)
+                        programadorAlertas.activar()
+                    } else if (huboSesion) {
+                        huboSesion = false
+                        programadorAlertas.desactivar()
+                    }
+                }
+        }
     }
 
     fun showError(message: String) {

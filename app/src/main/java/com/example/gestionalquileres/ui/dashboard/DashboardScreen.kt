@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import com.example.gestionalquileres.domain.model.IngresoMensual
-import com.example.gestionalquileres.domain.sumarMontos
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,7 +38,9 @@ import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.comoMonto
 import com.example.gestionalquileres.domain.model.CobranzaMes
 import com.example.gestionalquileres.domain.model.Deudor
+import com.example.gestionalquileres.domain.model.IngresoMensual
 import com.example.gestionalquileres.domain.model.ResumenGeneral
+import com.example.gestionalquileres.domain.sumarMontos
 import com.example.gestionalquileres.ui.common.AppTopBar
 import com.example.gestionalquileres.ui.theme.ExitoVerde
 import java.time.YearMonth

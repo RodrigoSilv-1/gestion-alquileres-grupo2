@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.R
 import com.example.gestionalquileres.domain.model.AppUser
 import com.example.gestionalquileres.domain.model.UserRole
+import com.example.gestionalquileres.ui.notificaciones.SolicitarPermisoNotificaciones
 
 @Composable
 fun HomeScreen(
@@ -39,6 +40,8 @@ fun HomeScreen(
 ) {
     val esAdmin = user.role == UserRole.ADMIN.name
     val roleText = if (esAdmin) "Administrador" else "Secretario"
+
+    SolicitarPermisoNotificaciones()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(

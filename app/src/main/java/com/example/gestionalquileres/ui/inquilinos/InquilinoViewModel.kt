@@ -2,9 +2,9 @@ package com.example.gestionalquileres.ui.inquilinos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.domain.model.FotoRepository
 import com.example.gestionalquileres.data.repository.InquilinoRepositoryImpl
 import com.example.gestionalquileres.domain.model.AppResult
+import com.example.gestionalquileres.domain.model.FotoRepository
 import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.domain.model.TipoFoto
 import com.example.gestionalquileres.domain.model.onFailure

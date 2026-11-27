@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import com.example.gestionalquileres.ui.common.PieDePaginacion
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -46,6 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.ui.common.AppTopBar
+import com.example.gestionalquileres.ui.common.PieDePaginacion
 
 // Pantalla principal: decide qué se muestra (listado, formulario, edición o detalle)
 @Composable

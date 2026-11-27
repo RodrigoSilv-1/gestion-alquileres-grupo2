@@ -4,9 +4,9 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.gestionalquileres.domain.model.DISTRITOS_LIMA
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.MAX_UNIDADES_POR_INMUEBLE
-import com.example.gestionalquileres.domain.model.DISTRITOS_LIMA
 import com.example.gestionalquileres.domain.model.aDistritoLimaOficial
 
 /** Estado del formulario de inmueble. Sin argumentos = alta; con [inmueble] = edición. */

@@ -2,15 +2,15 @@ package com.example.gestionalquileres.ui.inmuebles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionalquileres.domain.model.FotoRepository
 import com.example.gestionalquileres.data.repository.InmuebleRepositoryImpl
 import com.example.gestionalquileres.data.repository.UnidadAlquilableRepositoryImpl
 import com.example.gestionalquileres.domain.model.AppResult
+import com.example.gestionalquileres.domain.model.DISTRITOS_LIMA
+import com.example.gestionalquileres.domain.model.FotoRepository
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.TipoFoto
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
 import com.example.gestionalquileres.domain.model.claveDireccion
-import com.example.gestionalquileres.domain.model.DISTRITOS_LIMA
 import com.example.gestionalquileres.domain.model.onFailure
 import com.example.gestionalquileres.domain.model.onSuccess
 import com.example.gestionalquileres.domain.model.sincronizar

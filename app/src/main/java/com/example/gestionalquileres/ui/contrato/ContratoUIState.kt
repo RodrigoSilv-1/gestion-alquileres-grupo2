@@ -1,10 +1,10 @@
 package com.example.gestionalquileres.ui.contrato
 
 import com.example.gestionalquileres.domain.model.Contrato
+import com.example.gestionalquileres.domain.model.CursorPagina
 import com.example.gestionalquileres.domain.model.Inmueble
 import com.example.gestionalquileres.domain.model.Inquilino
 import com.example.gestionalquileres.domain.model.UnidadAlquilable
-import com.example.gestionalquileres.domain.model.CursorPagina
 
 data class ContratoUiState(
     // Lista paginada que ve la pantalla

@@ -1,25 +1,25 @@
 package com.example.gestionalquileres.ui.navigation
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.gestionalquileres.ui.auth.AuthViewModel
-import com.example.gestionalquileres.ui.auth.LoginScreen
-import android.widget.Toast
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import com.example.gestionalquileres.ui.auth.HuellaDactilar
-import com.example.gestionalquileres.ui.auth.findFragmentActivity
+import com.example.gestionalquileres.ui.auth.LoginScreen
 import com.example.gestionalquileres.ui.auth.RegisterScreen
+import com.example.gestionalquileres.ui.auth.findFragmentActivity
 import com.example.gestionalquileres.ui.common.LoadingScreen
 
 /**
